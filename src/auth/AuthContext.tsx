@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, type ReactNode } from 'react'
 import { apiClient } from '../api/client'
+import type { Company } from '../api/companies'
 
 type User = {
   id: number
@@ -7,10 +8,20 @@ type User = {
   email: string
 }
 
+export type RegisterPayload = {
+  name: string
+  email: string
+  password: string
+  company_name: string
+  company_ruc: string
+  company_environment: 'test' | 'production'
+}
+
 type AuthContextValue = {
   user: User | null
   token: string | null
   login: (email: string, password: string) => Promise<void>
+  register: (payload: RegisterPayload) => Promise<Company>
   logout: () => Promise<void>
 }
 
@@ -27,6 +38,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(data.user)
   }
 
+  async function register(payload: RegisterPayload): Promise<Company> {
+    const { data } = await apiClient.post('/auth/register', payload)
+    localStorage.setItem('token', data.token)
+    setToken(data.token)
+    setUser(data.user)
+    return data.company as Company
+  }
+
   async function logout() {
     try {
       await apiClient.delete('/auth/logout')
@@ -38,7 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout }}>
+    <AuthContext.Provider value={{ user, token, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   )

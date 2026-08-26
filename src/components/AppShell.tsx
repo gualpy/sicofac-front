@@ -20,8 +20,10 @@ export function AppShell() {
           {company && (
             <>
               <Link to="/customers">Clientes</Link>
-              <Link to="/products">Productos</Link>
               <Link to="/invoices">Facturas</Link>
+              <Link to="/settings">
+                <i className="fa-solid fa-gear" /> Configuracion
+              </Link>
             </>
           )}
         </nav>

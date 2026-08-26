@@ -11,6 +11,7 @@ import { CustomersPage } from './pages/CustomersPage'
 import { ProductsPage } from './pages/ProductsPage'
 import { InvoicesPage } from './pages/InvoicesPage'
 import { NewInvoicePage } from './pages/NewInvoicePage'
+import { SettingsPage } from './pages/SettingsPage'
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
                 <Route path="/products" element={<ProductsPage />} />
                 <Route path="/invoices" element={<InvoicesPage />} />
                 <Route path="/invoices/new" element={<NewInvoicePage />} />
+                <Route path="/settings" element={<SettingsPage />} />
               </Route>
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />

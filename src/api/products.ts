@@ -15,6 +15,7 @@ export type Product = {
   id: number
   company_id: number
   code: string
+  auxiliary_code: string | null
   name: string
   unit_price: string
   tax_rate: string
@@ -23,10 +24,16 @@ export type Product = {
   is_active: boolean
 }
 
-type PaginatedResponse<T> = { data: T[] }
+type PaginatedResponse<T> = {
+  data: T[]
+  current_page: number
+  last_page: number
+  total: number
+}
 
 export type CreateProductPayload = {
   code: string
+  auxiliary_code?: string
   name: string
   unit_price: number
   tax_rate: number
@@ -35,11 +42,15 @@ export type CreateProductPayload = {
   is_active?: boolean
 }
 
-export async function listProducts(companyId: number): Promise<Product[]> {
+export async function listProducts(
+  companyId: number,
+  filters: { code?: string; name?: string; page?: number } = {},
+): Promise<PaginatedResponse<Product>> {
   const { data } = await apiClient.get<PaginatedResponse<Product>>(
     `/companies/${companyId}/products`,
+    { params: { ...filters, per_page: 10 } },
   )
-  return data.data
+  return data
 }
 
 export async function searchProducts(companyId: number, search: string): Promise<Product[]> {
@@ -56,4 +67,29 @@ export async function createProduct(
 ): Promise<Product> {
   const { data } = await apiClient.post<Product>(`/companies/${companyId}/products`, payload)
   return data
+}
+
+export async function deleteProduct(companyId: number, productId: number): Promise<void> {
+  await apiClient.delete(`/companies/${companyId}/products/${productId}`)
+}
+
+export async function deleteAllProducts(
+  companyId: number,
+): Promise<{ deleted: number; skipped: number }> {
+  const { data } = await apiClient.delete<{ deleted: number; skipped: number }>(
+    `/companies/${companyId}/products`,
+  )
+  return data
+}
+
+export async function downloadProductsExport(companyId: number): Promise<void> {
+  const { data } = await apiClient.get(`/companies/${companyId}/products/export`, {
+    responseType: 'blob',
+  })
+  const url = URL.createObjectURL(data as Blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = 'productos.csv'
+  link.click()
+  URL.revokeObjectURL(url)
 }

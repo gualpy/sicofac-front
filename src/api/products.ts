@@ -46,6 +46,7 @@ export async function listProducts(
   companyId: number,
   filters: { code?: string; name?: string; page?: number } = {},
 ): Promise<PaginatedResponse<Product>> {
+  debugger // TEMPORAL: sacar despues de debuggear
   const { data } = await apiClient.get<PaginatedResponse<Product>>(
     `/companies/${companyId}/products`,
     { params: { ...filters, per_page: 10 } },

@@ -40,6 +40,7 @@ export function ProductsPage() {
       })
       .catch(() => setError('No se pudo cargar los productos.'))
       .finally(() => setLoading(false))
+      console.log(listProducts);
   }
 
   function handleSearch(event: FormEvent) {

@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { listInvoices, emitInvoice, INVOICE_STATUS_LABELS, type Invoice } from '../api/invoices'
+import toast from 'react-hot-toast'
+import { listInvoices, emitInvoice, openInvoiceRide, INVOICE_STATUS_LABELS, type Invoice } from '../api/invoices'
 import { useCompany } from '../company/CompanyContext'
 
 export function InvoicesPage() {
   const { company } = useCompany()
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [busyId, setBusyId] = useState<number | null>(null)
 
   useEffect(() => {
@@ -18,21 +18,29 @@ export function InvoicesPage() {
     setLoading(true)
     listInvoices(companyId)
       .then(setInvoices)
-      .catch(() => setError('No se pudo cargar las facturas.'))
+      .catch(() => toast.error('No se pudo cargar las facturas.'))
       .finally(() => setLoading(false))
   }
 
   async function handleEmit(invoiceId: number) {
     if (!company) return
     setBusyId(invoiceId)
-    setError(null)
     try {
       await emitInvoice(company.id, invoiceId)
       refresh(company.id)
     } catch {
-      setError('No se pudo emitir la factura.')
+      toast.error('No se pudo emitir la factura.')
     } finally {
       setBusyId(null)
+    }
+  }
+
+  async function handleRide(invoiceId: number) {
+    if (!company) return
+    try {
+      await openInvoiceRide(company.id, invoiceId)
+    } catch {
+      toast.error('No se pudo abrir el RIDE.')
     }
   }
 
@@ -46,8 +54,6 @@ export function InvoicesPage() {
           <i className="fa-solid fa-plus" /> Nueva factura
         </Link>
       </div>
-
-      {error && <p role="alert">{error}</p>}
 
       {loading ? (
         <p>Cargando...</p>
@@ -89,6 +95,11 @@ export function InvoicesPage() {
                       onClick={() => handleEmit(invoice.id)}
                     >
                       Emitir
+                    </button>
+                  )}
+                  {invoice.status === 'authorized' && (
+                    <button type="button" onClick={() => handleRide(invoice.id)}>
+                      <i className="fa-solid fa-file-pdf" /> RIDE
                     </button>
                   )}
                 </td>

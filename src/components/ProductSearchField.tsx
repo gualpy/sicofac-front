@@ -13,15 +13,21 @@ export function ProductSearchField({ companyId, onSelect }: Props) {
   const [open, setOpen] = useState(false)
   const debouncedTerm = useDebouncedValue(term, 300)
   const boxRef = useRef<HTMLDivElement>(null)
+  const requestIdRef = useRef(0)
 
   useEffect(() => {
-    if (debouncedTerm.trim().length < 2) {
+    if (debouncedTerm.trim().length < 1) {
       setResults([])
       return
     }
+    const requestId = ++requestIdRef.current
     searchProducts(companyId, debouncedTerm.trim())
-      .then(setResults)
-      .catch(() => setResults([]))
+      .then((data) => {
+        if (requestIdRef.current === requestId) setResults(data)
+      })
+      .catch(() => {
+        if (requestIdRef.current === requestId) setResults([])
+      })
   }, [companyId, debouncedTerm])
 
   useEffect(() => {

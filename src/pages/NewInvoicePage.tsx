@@ -148,39 +148,32 @@ export function NewInvoicePage() {
 
       <div className="invoice-doc">
         <div className="invoice-doc-header">
-          <div className="issuer-block">
-            <span className="issuer-name">{company.trade_name || company.name}</span>
-            <div className="contact-line">
-              <i className="fa-solid fa-id-card" /> RUC: {company.ruc}
+          <div className="invoice-doc-toprow">
+            <div className="issuer-block">
+              <span className="issuer-name">{company.trade_name || company.name}</span>
+              <div className="contact-line">
+                <i className="fa-solid fa-id-card" /> RUC: {company.ruc}
+              </div>
+              {(company.address || company.phone || company.email) && (
+                <div className="contact-line-secondary">
+                  {[company.address, company.phone, company.email].filter(Boolean).join(' · ')}
+                </div>
+              )}
             </div>
-            {company.address && (
-              <div className="contact-line">
-                <i className="fa-solid fa-location-dot" /> {company.address}
+
+            <div className="invoice-number-block">
+              <div className="invoice-number-top">
+                <span className="invoice-doc-title">FACTURA</span>
+                <span className="badge draft">BORRADOR</span>
               </div>
-            )}
-            {company.phone && (
-              <div className="contact-line">
-                <i className="fa-solid fa-phone" /> {company.phone}
-              </div>
-            )}
-            {company.email && (
-              <div className="contact-line">
-                <i className="fa-solid fa-envelope" /> {company.email}
-              </div>
-            )}
+              <span className="invoice-number-badge">
+                {selectedEstablishment?.code ?? '---'}-{selectedEmissionPoint?.code ?? '---'}-?????????
+              </span>
+              <span className="issue-date">{formattedDate}</span>
+            </div>
           </div>
 
-          <div className="invoice-number-block">
-            <h1>FACTURA</h1>
-            <span className="invoice-number-badge">
-              {selectedEstablishment?.code ?? '---'}-{selectedEmissionPoint?.code ?? '---'}-?????????
-            </span>
-            <span className="issue-date">{formattedDate}</span>
-            <span className="badge draft">BORRADOR</span>
-          </div>
-
-          <div className="comprobante-fields">
-            <h3>Datos del comprobante</h3>
+          <div className="form-row comprobante-fields-row">
             <label>
               Establecimiento
               <select
@@ -234,8 +227,10 @@ export function NewInvoicePage() {
         </div>
 
         <div>
-          <span className="section-label">Facturar a</span>
-          <CustomerSearchField companyId={company.id} onSelect={setCustomer} />
+          <div className="facturar-a-row">
+            <span className="section-label">Facturar a</span>
+            <CustomerSearchField companyId={company.id} onSelect={setCustomer} />
+          </div>
           {customer ? (
             <div className="selected-card">
               <div className="avatar">
@@ -269,24 +264,20 @@ export function NewInvoicePage() {
               </button>
             </div>
           ) : (
-            <p style={{ marginTop: 10, fontSize: 13, color: 'var(--text-muted)' }}>
-              Sin cliente seleccionado: se factura a consumidor final.
-            </p>
+            <span className="muted-inline">Consumidor final</span>
           )}
         </div>
 
         <div>
-          <div className="page-header" style={{ marginBottom: 10 }}>
-            <span className="section-label" style={{ marginBottom: 0 }}>
-              Detalle de la factura
-            </span>
+          <div className="detalle-header-row">
+            <span className="section-label">Detalle de la factura</span>
+            <ProductSearchField companyId={company.id} onSelect={addFromProduct} />
             <button type="button" onClick={addManualLine}>
               <i className="fa-solid fa-plus" /> Agregar linea
             </button>
           </div>
-          <ProductSearchField companyId={company.id} onSelect={addFromProduct} />
 
-          <table className="data-table line-items-table" style={{ marginTop: 12 }}>
+          <table className="data-table line-items-table" style={{ marginTop: 8 }}>
             <thead>
               <tr>
                 <th>#</th>

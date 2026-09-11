@@ -109,6 +109,13 @@ export type Invoice = {
 
 type PaginatedResponse<T> = { data: T[] }
 
+export type InvoicePage = {
+  data: Invoice[]
+  current_page: number
+  last_page: number
+  total: number
+}
+
 export type CreateInvoicePayload = {
   customer_id?: number
   document_code?: string
@@ -129,6 +136,13 @@ export async function listInvoices(companyId: number): Promise<Invoice[]> {
   return data.data
 }
 
+export async function listInvoicesPage(companyId: number, page: number): Promise<InvoicePage> {
+  const { data } = await apiClient.get<InvoicePage>(`/companies/${companyId}/invoices`, {
+    params: { page },
+  })
+  return data
+}
+
 export async function createInvoice(
   companyId: number,
   payload: CreateInvoicePayload,
@@ -139,4 +153,13 @@ export async function createInvoice(
 
 export async function emitInvoice(companyId: number, invoiceId: number): Promise<void> {
   await apiClient.post(`/companies/${companyId}/invoices/${invoiceId}/emit`)
+}
+
+export async function openInvoiceRide(companyId: number, invoiceId: number): Promise<void> {
+  const { data } = await apiClient.get(`/companies/${companyId}/invoices/${invoiceId}/ride`, {
+    responseType: 'blob',
+  })
+  const url = URL.createObjectURL(data as Blob)
+  window.open(url, '_blank')
+  setTimeout(() => URL.revokeObjectURL(url), 60_000)
 }

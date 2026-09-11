@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { Toaster } from 'react-hot-toast'
 import { AuthProvider } from './auth/AuthContext'
 import { CompanyProvider } from './company/CompanyContext'
 import { ProtectedRoute } from './routes/ProtectedRoute'
@@ -17,6 +18,7 @@ function App() {
   return (
     <AuthProvider>
       <CompanyProvider>
+        <Toaster position="top-center" toastOptions={{ duration: 4000 }} />
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<LoginPage />} />

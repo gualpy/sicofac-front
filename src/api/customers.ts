@@ -11,7 +11,12 @@ export type Customer = {
   address: string | null
 }
 
-type PaginatedResponse<T> = { data: T[] }
+type PaginatedResponse<T> = {
+  data: T[]
+  current_page: number
+  last_page: number
+  total: number
+}
 
 export type CreateCustomerPayload = {
   name: string
@@ -22,11 +27,15 @@ export type CreateCustomerPayload = {
   address?: string
 }
 
-export async function listCustomers(companyId: number): Promise<Customer[]> {
+export async function listCustomers(
+  companyId: number,
+  page = 1,
+): Promise<PaginatedResponse<Customer>> {
   const { data } = await apiClient.get<PaginatedResponse<Customer>>(
     `/companies/${companyId}/customers`,
+    { params: { page, per_page: 20 } },
   )
-  return data.data
+  return data
 }
 
 export async function searchCustomers(companyId: number, search: string): Promise<Customer[]> {
@@ -43,4 +52,22 @@ export async function createCustomer(
 ): Promise<Customer> {
   const { data } = await apiClient.post<Customer>(`/companies/${companyId}/customers`, payload)
   return data
+}
+
+export type UpdateCustomerPayload = Partial<CreateCustomerPayload>
+
+export async function updateCustomer(
+  companyId: number,
+  customerId: number,
+  payload: UpdateCustomerPayload,
+): Promise<Customer> {
+  const { data } = await apiClient.put<Customer>(
+    `/companies/${companyId}/customers/${customerId}`,
+    payload,
+  )
+  return data
+}
+
+export async function deleteCustomer(companyId: number, customerId: number): Promise<void> {
+  await apiClient.delete(`/companies/${companyId}/customers/${customerId}`)
 }

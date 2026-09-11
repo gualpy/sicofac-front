@@ -66,7 +66,7 @@ export function RegisterPage() {
           />
         </label>
         <label>
-          Contrasena
+          Contraseña
           <input
             type="password"
             value={password}

@@ -51,6 +51,7 @@ export type CertificateInfo = {
 export type UpdateProfilePayload = Partial<{
   name: string
   trade_name: string
+  ruc: string
   address: string
   phone: string
   email: string

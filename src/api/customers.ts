@@ -46,6 +46,11 @@ export async function searchCustomers(companyId: number, search: string): Promis
   return data.data
 }
 
+export async function getCustomer(companyId: number, customerId: number): Promise<Customer> {
+  const { data } = await apiClient.get<Customer>(`/companies/${companyId}/customers/${customerId}`)
+  return data
+}
+
 export async function createCustomer(
   companyId: number,
   payload: CreateCustomerPayload,

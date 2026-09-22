@@ -381,7 +381,24 @@ table.data-table {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 10px;
-  overflow: hidden;
+}
+
+/* overflow:hidden would clip absolutely-positioned row menus (.row-menu-dropdown),
+   so corners are rounded per-cell instead of clipping the whole table. */
+.data-table thead tr:first-child th:first-child {
+  border-top-left-radius: 10px;
+}
+
+.data-table thead tr:first-child th:last-child {
+  border-top-right-radius: 10px;
+}
+
+.data-table tbody tr:last-child td:first-child {
+  border-bottom-left-radius: 10px;
+}
+
+.data-table tbody tr:last-child td:last-child {
+  border-bottom-right-radius: 10px;
 }
 
 .data-table th,
@@ -546,10 +563,15 @@ table.data-table {
   background: var(--success-pastel-bg);
 }
 
-.badge.rejected,
-.badge.failed {
+.badge.rejected {
   color: var(--danger);
   background: var(--danger-pastel-bg);
+}
+
+.badge.failed {
+  color: var(--text-muted);
+  background: var(--table-row-hover);
+  border: 1px solid var(--border);
 }
 
 .badge.draft {
@@ -564,6 +586,28 @@ table.data-table {
 .badge.sent_reception {
   color: var(--warning);
   background: var(--warning-pastel-bg);
+}
+
+.invoice-detail-row {
+  background: var(--bg);
+  padding: 16px !important;
+}
+
+.invoice-detail-panel {
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+
+.invoice-detail-items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 13px;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 /* Auth page */

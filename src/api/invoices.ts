@@ -42,13 +42,25 @@ export const PAYMENT_TERM_UNIT_LABELS: Record<PaymentTermUnit, string> = {
 
 export const INVOICE_STATUS_LABELS: Record<string, string> = {
   draft: 'Borrador',
-  processing: 'Procesando',
-  xml_built: 'XML generado',
-  signed: 'Firmado',
-  sent_reception: 'Enviado',
-  authorized: 'Autorizado',
-  rejected: 'Rechazado',
-  failed: 'Fallido',
+  processing: 'En proceso',
+  xml_built: 'En proceso',
+  signed: 'En proceso',
+  sent_reception: 'En proceso',
+  authorized: 'Autorizada',
+  rejected: 'Rechazada',
+  failed: 'Error tecnico',
+}
+
+/** Statuses considered "en proceso" for filtering/tabs — everything between Draft and a terminal outcome. */
+export const IN_PROGRESS_STATUSES = ['processing', 'xml_built', 'signed', 'sent_reception']
+
+export type InvoiceStatusFilter = 'draft' | 'in_progress' | 'authorized' | 'rejected'
+
+export const STATUS_FILTER_VALUES: Record<InvoiceStatusFilter, string[]> = {
+  draft: ['draft'],
+  in_progress: IN_PROGRESS_STATUSES,
+  authorized: ['authorized'],
+  rejected: ['rejected', 'failed'],
 }
 
 export type InvoiceItemInput = {
@@ -102,9 +114,25 @@ export type Invoice = {
   has_tip: boolean
   tip_amount: string
   total: string
-  customer?: { id: number; name: string } | null
+  customer?: { id: number; name: string; identification_number?: string } | null
+  items?: Array<{
+    id: number
+    product_id: number | null
+    code: string
+    name: string
+    quantity: string
+    unit_price: string
+    discount: string
+    tax_rate: string
+    tax_code: TaxCode
+    ice_rate: string
+    total: string
+  }>
+  establishment_code?: string | null
+  emission_point?: string | null
   payment_methods?: Array<{ id: number; method: PaymentMethod; value: string; term_value: number | null; term_unit: PaymentTermUnit | null }>
   additional_fields?: Array<{ id: number; name: string; description: string }>
+  events?: Array<{ id: number; event: string; payload: { messages?: string[] } | null; created_at: string }>
 }
 
 type PaginatedResponse<T> = { data: T[] }
@@ -114,6 +142,14 @@ export type InvoicePage = {
   current_page: number
   last_page: number
   total: number
+}
+
+export type InvoiceFilters = {
+  search?: string
+  status?: string[]
+  from?: string
+  to?: string
+  per_page?: number
 }
 
 export type CreateInvoicePayload = {
@@ -136,10 +172,19 @@ export async function listInvoices(companyId: number): Promise<Invoice[]> {
   return data.data
 }
 
-export async function listInvoicesPage(companyId: number, page: number): Promise<InvoicePage> {
+export async function listInvoicesPage(
+  companyId: number,
+  page: number,
+  filters: InvoiceFilters = {},
+): Promise<InvoicePage> {
   const { data } = await apiClient.get<InvoicePage>(`/companies/${companyId}/invoices`, {
-    params: { page },
+    params: { page, ...filters },
   })
+  return data
+}
+
+export async function getInvoice(companyId: number, invoiceId: number): Promise<Invoice> {
+  const { data } = await apiClient.get<Invoice>(`/companies/${companyId}/invoices/${invoiceId}`)
   return data
 }
 
@@ -149,6 +194,22 @@ export async function createInvoice(
 ): Promise<Invoice> {
   const { data } = await apiClient.post<Invoice>(`/companies/${companyId}/invoices`, payload)
   return data
+}
+
+export async function updateInvoice(
+  companyId: number,
+  invoiceId: number,
+  payload: CreateInvoicePayload,
+): Promise<Invoice> {
+  const { data } = await apiClient.put<Invoice>(
+    `/companies/${companyId}/invoices/${invoiceId}`,
+    payload,
+  )
+  return data
+}
+
+export async function deleteInvoice(companyId: number, invoiceId: number): Promise<void> {
+  await apiClient.delete(`/companies/${companyId}/invoices/${invoiceId}`)
 }
 
 export async function emitInvoice(companyId: number, invoiceId: number): Promise<void> {

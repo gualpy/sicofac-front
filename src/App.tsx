@@ -31,6 +31,7 @@ function App() {
                 <Route path="/products" element={<ProductsPage />} />
                 <Route path="/invoices" element={<InvoicesPage />} />
                 <Route path="/invoices/new" element={<NewInvoicePage />} />
+                <Route path="/invoices/:id/edit" element={<NewInvoicePage />} />
                 <Route path="/settings" element={<SettingsPage />} />
               </Route>
             </Route>

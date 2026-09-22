@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   createInvoice,
+  updateInvoice,
+  getInvoice,
   emitInvoice,
   QUICK_PAYMENT_METHODS,
   PAYMENT_METHOD_LABELS,
@@ -10,7 +12,7 @@ import {
 } from '../api/invoices'
 import { listEstablishments, type Establishment } from '../api/companies'
 import { TAX_CODE_LABELS, type TaxCode, type Product } from '../api/products'
-import type { Customer } from '../api/customers'
+import { getCustomer, type Customer } from '../api/customers'
 import { useCompany } from '../company/CompanyContext'
 import { CustomerSearchField } from '../components/CustomerSearchField'
 import { ProductSearchField } from '../components/ProductSearchField'
@@ -25,6 +27,9 @@ function taxRateForCode(code: TaxCode): number {
 export function NewInvoicePage() {
   const { company } = useCompany()
   const navigate = useNavigate()
+  const { id } = useParams()
+  const invoiceId = id ? Number(id) : null
+  const isEdit = invoiceId !== null
 
   const [establishments, setEstablishments] = useState<Establishment[]>([])
   const [establishmentId, setEstablishmentId] = useState<number | null>(null)
@@ -39,19 +44,77 @@ export function NewInvoicePage() {
 
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState<'draft' | 'emit' | null>(null)
+  const [loadingInvoice, setLoadingInvoice] = useState(isEdit)
 
   useEffect(() => {
     if (!company) return
-    listEstablishments(company.id).then((list) => {
+    let cancelled = false
+
+    async function load() {
+      const list = await listEstablishments(company!.id)
+      if (cancelled) return
       setEstablishments(list)
-      if (list.length > 0) {
-        setEstablishmentId(list[0].id)
-        if (list[0].emission_points.length > 0) {
-          setEmissionPointId(list[0].emission_points[0].id)
+
+      if (invoiceId === null) {
+        if (list.length > 0) {
+          setEstablishmentId(list[0].id)
+          if (list[0].emission_points.length > 0) {
+            setEmissionPointId(list[0].emission_points[0].id)
+          }
         }
+        return
       }
-    })
-  }, [company])
+
+      try {
+        const invoice = await getInvoice(company!.id, invoiceId)
+        if (cancelled) return
+
+        setGuideNumber(invoice.guide_number ?? '')
+        setIsNegotiable(invoice.is_negotiable)
+        setIssueDate(invoice.issue_date.slice(0, 10))
+        setItems(
+          (invoice.items ?? []).map((item) => ({
+            code: item.code,
+            name: item.name,
+            quantity: Number(item.quantity),
+            unit_price: Number(item.unit_price),
+            discount: Number(item.discount),
+            tax_rate: Number(item.tax_rate),
+            tax_code: item.tax_code,
+            ice_rate: Number(item.ice_rate),
+            product_id: item.product_id ?? undefined,
+          })),
+        )
+
+        const firstPaymentMethod = invoice.payment_methods?.[0]
+        if (firstPaymentMethod) setPaymentMethod(firstPaymentMethod.method)
+
+        const est = list.find((e) => e.code === invoice.establishment_code) ?? list[0] ?? null
+        setEstablishmentId(est?.id ?? null)
+        const ep = est?.emission_points.find((p) => p.code === invoice.emission_point) ?? est?.emission_points[0] ?? null
+        setEmissionPointId(ep?.id ?? null)
+
+        if (invoice.customer_id) {
+          try {
+            const fullCustomer = await getCustomer(company!.id, invoice.customer_id)
+            if (!cancelled) setCustomer(fullCustomer)
+          } catch {
+            // Non-fatal: the form still works, just without a prefilled customer card.
+          }
+        }
+      } catch {
+        if (!cancelled) setError('No se pudo cargar la factura a editar.')
+      } finally {
+        if (!cancelled) setLoadingInvoice(false)
+      }
+    }
+
+    load()
+
+    return () => {
+      cancelled = true
+    }
+  }, [company, invoiceId])
 
   if (!company) return null
 
@@ -108,7 +171,7 @@ export function NewInvoicePage() {
 
     setSubmitting(mode)
     try {
-      const invoice = await createInvoice(company.id, {
+      const payload = {
         customer_id: customer?.id,
         establishment_code: selectedEstablishment?.code,
         emission_point: selectedEmissionPoint?.code,
@@ -116,7 +179,11 @@ export function NewInvoicePage() {
         is_negotiable: isNegotiable,
         items,
         payment_methods: [{ method: paymentMethod, value: totals.total }],
-      })
+      }
+
+      const invoice = isEdit && invoiceId !== null
+        ? await updateInvoice(company.id, invoiceId, payload)
+        : await createInvoice(company.id, payload)
 
       if (mode === 'emit') {
         await emitInvoice(company.id, invoice.id)
@@ -141,12 +208,13 @@ export function NewInvoicePage() {
       <div className="breadcrumb">
         <Link to="/invoices">Facturacion</Link>
         <i className="fa-solid fa-chevron-right" style={{ fontSize: 10 }} />
-        <span className="current">Nueva factura</span>
+        <span className="current">{isEdit ? 'Editar borrador' : 'Nueva factura'}</span>
       </div>
 
       {error && <p role="alert">{error}</p>}
+      {loadingInvoice && <p>Cargando factura...</p>}
 
-      <div className="invoice-doc">
+      {!loadingInvoice && <div className="invoice-doc">
         <div className="invoice-doc-header">
           <div className="invoice-doc-toprow">
             <div className="issuer-block">
@@ -438,7 +506,7 @@ export function NewInvoicePage() {
         <div className="invoice-actions-bar">
           <button type="button" disabled={submitting !== null} onClick={() => handleSubmit('draft')}>
             <i className="fa-solid fa-floppy-disk" />
-            {submitting === 'draft' ? 'Guardando...' : 'Guardar borrador'}
+            {submitting === 'draft' ? 'Guardando...' : isEdit ? 'Guardar cambios' : 'Guardar borrador'}
           </button>
           <button
             type="button"
@@ -450,7 +518,7 @@ export function NewInvoicePage() {
             {submitting === 'emit' ? 'Emitiendo...' : 'Emitir factura'}
           </button>
         </div>
-      </div>
+      </div>}
     </div>
   )
 }

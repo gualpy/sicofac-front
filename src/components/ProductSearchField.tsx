@@ -11,6 +11,7 @@ export function ProductSearchField({ companyId, onSelect }: Props) {
   const [term, setTerm] = useState('')
   const [results, setResults] = useState<Product[]>([])
   const [open, setOpen] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(-1)
   const debouncedTerm = useDebouncedValue(term, 300)
   const boxRef = useRef<HTMLDivElement>(null)
   const requestIdRef = useRef(0)
@@ -23,12 +24,41 @@ export function ProductSearchField({ companyId, onSelect }: Props) {
     const requestId = ++requestIdRef.current
     searchProducts(companyId, debouncedTerm.trim())
       .then((data) => {
-        if (requestIdRef.current === requestId) setResults(data)
+        if (requestIdRef.current === requestId) {
+          setResults(data)
+          setActiveIndex(-1)
+        }
       })
       .catch(() => {
         if (requestIdRef.current === requestId) setResults([])
       })
   }, [companyId, debouncedTerm])
+
+  function selectProduct(product: Product) {
+    onSelect(product)
+    setTerm('')
+    setResults([])
+    setOpen(false)
+    setActiveIndex(-1)
+  }
+
+  function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (!open || results.length === 0) return
+    if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      setActiveIndex((i) => (i + 1) % results.length)
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault()
+      setActiveIndex((i) => (i - 1 + results.length) % results.length)
+    } else if (event.key === 'Enter') {
+      if (activeIndex >= 0) {
+        event.preventDefault()
+        selectProduct(results[activeIndex])
+      }
+    } else if (event.key === 'Escape') {
+      setOpen(false)
+    }
+  }
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -52,19 +82,17 @@ export function ProductSearchField({ companyId, onSelect }: Props) {
             setOpen(true)
           }}
           onFocus={() => setOpen(true)}
+          onKeyDown={handleKeyDown}
         />
       </div>
       {open && results.length > 0 && (
         <ul className="search-results">
-          {results.map((product) => (
+          {results.map((product, index) => (
             <li
               key={product.id}
-              onClick={() => {
-                onSelect(product)
-                setTerm('')
-                setResults([])
-                setOpen(false)
-              }}
+              className={index === activeIndex ? 'active' : undefined}
+              onMouseEnter={() => setActiveIndex(index)}
+              onClick={() => selectProduct(product)}
             >
               <strong>{product.code}</strong>
               <span>{product.name}</span>

@@ -841,7 +841,8 @@ table.data-table {
   font-size: 13px;
 }
 
-.search-results li:hover {
+.search-results li:hover,
+.search-results li.active {
   background: var(--table-row-hover);
 }
 

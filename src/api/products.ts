@@ -22,6 +22,11 @@ export type Product = {
   tax_code: TaxCode
   ice_rate: string
   is_active: boolean
+  pos_enabled: boolean
+  pos_category_id: number | null
+  pos_label: string | null
+  barcode: string | null
+  pos_sort_order: number
 }
 
 type PaginatedResponse<T> = {
@@ -40,18 +45,33 @@ export type CreateProductPayload = {
   tax_code?: TaxCode
   ice_rate?: number
   is_active?: boolean
+  pos_enabled?: boolean
+  pos_category_id?: number | null
+  pos_label?: string
+  barcode?: string
+  pos_sort_order?: number
 }
 
 export async function listProducts(
   companyId: number,
   filters: { code?: string; name?: string; page?: number } = {},
 ): Promise<PaginatedResponse<Product>> {
-  debugger // TEMPORAL: sacar despues de debuggear
   const { data } = await apiClient.get<PaginatedResponse<Product>>(
     `/companies/${companyId}/products`,
     { params: { ...filters, per_page: 10 } },
   )
   return data
+}
+
+export async function listPosProducts(
+  companyId: number,
+  filters: { search?: string; pos_category_id?: number; barcode?: string } = {},
+): Promise<Product[]> {
+  const { data } = await apiClient.get<PaginatedResponse<Product>>(
+    `/companies/${companyId}/products`,
+    { params: { ...filters, pos_enabled: 1, per_page: 200 } },
+  )
+  return data.data
 }
 
 export async function searchProducts(companyId: number, search: string): Promise<Product[]> {
@@ -67,6 +87,18 @@ export async function createProduct(
   payload: CreateProductPayload,
 ): Promise<Product> {
   const { data } = await apiClient.post<Product>(`/companies/${companyId}/products`, payload)
+  return data
+}
+
+export async function updateProduct(
+  companyId: number,
+  productId: number,
+  payload: CreateProductPayload,
+): Promise<Product> {
+  const { data } = await apiClient.put<Product>(
+    `/companies/${companyId}/products/${productId}`,
+    payload,
+  )
   return data
 }
 

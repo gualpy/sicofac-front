@@ -13,6 +13,7 @@ import { ProductsPage } from './pages/ProductsPage'
 import { InvoicesPage } from './pages/InvoicesPage'
 import { NewInvoicePage } from './pages/NewInvoicePage'
 import { SettingsPage } from './pages/SettingsPage'
+import { PosPage } from './pages/PosPage'
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route element={<ProtectedRoute />}>
+              <Route path="/pos" element={<PosPage />} />
               <Route element={<AppShell />}>
                 <Route path="/" element={<DashboardPage />} />
                 <Route path="/company" element={<CompanyPage />} />

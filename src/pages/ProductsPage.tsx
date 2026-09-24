@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import {
   listProducts,
   createProduct,
+  updateProduct,
   deleteProduct,
   deleteAllProducts,
   downloadProductsExport,
@@ -9,6 +10,12 @@ import {
   type Product,
   type TaxCode,
 } from '../api/products'
+import {
+  listPosCategories,
+  createPosCategory,
+  deletePosCategory,
+  type PosCategory,
+} from '../api/posCategories'
 import { useCompany } from '../company/CompanyContext'
 
 export function ProductsPage() {
@@ -22,12 +29,50 @@ export function ProductsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [busy, setBusy] = useState(false)
+  const [posEnabledField, setPosEnabledField] = useState(false)
+
+  const [categories, setCategories] = useState<PosCategory[]>([])
+  const [showCategories, setShowCategories] = useState(false)
+  const [newCategoryName, setNewCategoryName] = useState('')
 
   useEffect(() => {
     if (company) refresh(company.id, 1)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [company])
+
+  useEffect(() => {
+    if (company) refreshCategories(company.id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [company])
+
+  function refreshCategories(companyId: number) {
+    listPosCategories(companyId).then(setCategories).catch(() => setCategories([]))
+  }
+
+  async function handleCreateCategory(event: FormEvent) {
+    event.preventDefault()
+    if (!company || !newCategoryName.trim()) return
+    try {
+      await createPosCategory(company.id, { name: newCategoryName.trim() })
+      setNewCategoryName('')
+      refreshCategories(company.id)
+    } catch {
+      setError('No se pudo crear la categoria. Puede que el nombre ya exista.')
+    }
+  }
+
+  async function handleDeleteCategory(categoryId: number) {
+    if (!company) return
+    if (!confirm('Eliminar esta categoria de POS?')) return
+    try {
+      await deletePosCategory(company.id, categoryId)
+      refreshCategories(company.id)
+    } catch {
+      setError('No se pudo eliminar la categoria (puede tener productos asignados).')
+    }
+  }
 
   function refresh(companyId: number, pageToLoad: number) {
     setLoading(true)
@@ -40,7 +85,6 @@ export function ProductsPage() {
       })
       .catch(() => setError('No se pudo cargar los productos.'))
       .finally(() => setLoading(false))
-      console.log(listProducts);
   }
 
   function handleSearch(event: FormEvent) {
@@ -48,26 +92,63 @@ export function ProductsPage() {
     if (company) refresh(company.id, 1)
   }
 
-  async function handleCreate(event: FormEvent<HTMLFormElement>) {
+  function openCreateForm() {
+    setEditingProduct(null)
+    setPosEnabledField(false)
+    setShowForm(true)
+    setError(null)
+  }
+
+  function openEditForm(product: Product) {
+    setEditingProduct(product)
+    setPosEnabledField(product.pos_enabled)
+    setShowForm(true)
+    setError(null)
+  }
+
+  function closeForm() {
+    setShowForm(false)
+    setEditingProduct(null)
+    setPosEnabledField(false)
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!company) return
     setError(null)
     const form = new FormData(event.currentTarget)
 
+    const posEnabled = form.get('pos_enabled') === 'on'
+
+    const payload = {
+      code: String(form.get('code')),
+      auxiliary_code: String(form.get('auxiliary_code') || '') || undefined,
+      name: String(form.get('name')),
+      unit_price: Number(form.get('unit_price')),
+      tax_rate: Number(form.get('tax_rate')),
+      tax_code: form.get('tax_code') as TaxCode,
+      ice_rate: Number(form.get('ice_rate') || 0),
+      pos_enabled: posEnabled,
+      pos_category_id: posEnabled && form.get('pos_category_id') ? Number(form.get('pos_category_id')) : undefined,
+      pos_label: posEnabled ? String(form.get('pos_label') || '') || undefined : undefined,
+      barcode: posEnabled ? String(form.get('barcode') || '') || undefined : undefined,
+      pos_sort_order: posEnabled && form.get('pos_sort_order') ? Number(form.get('pos_sort_order')) : undefined,
+    }
+
     try {
-      await createProduct(company.id, {
-        code: String(form.get('code')),
-        auxiliary_code: String(form.get('auxiliary_code') || '') || undefined,
-        name: String(form.get('name')),
-        unit_price: Number(form.get('unit_price')),
-        tax_rate: Number(form.get('tax_rate')),
-        tax_code: form.get('tax_code') as TaxCode,
-        ice_rate: Number(form.get('ice_rate') || 0),
-      })
-      setShowForm(false)
-      refresh(company.id, 1)
+      if (editingProduct) {
+        await updateProduct(company.id, editingProduct.id, payload)
+      } else {
+        await createProduct(company.id, payload)
+      }
+      closeForm()
+      refresh(company.id, editingProduct ? page : 1)
     } catch {
-      setError('No se pudo crear el producto. Revisa que el codigo no este repetido.')
+      setError(
+        editingProduct
+          ? 'No se pudo actualizar el producto. Revisa que el codigo o el codigo de barras no esten repetidos.'
+          : 'No se pudo crear el producto. Revisa que el codigo o el codigo de barras no esten repetidos.',
+      )
     }
   }
 
@@ -124,7 +205,11 @@ export function ProductsPage() {
         </div>
         <div className="invoice-actions-bar" style={{ justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button type="button" className="primary" onClick={() => setShowForm((v) => !v)}>
+            <button
+              type="button"
+              className="primary"
+              onClick={() => (showForm ? closeForm() : openCreateForm())}
+            >
               <i className="fa-solid fa-plus" /> {showForm ? 'Cancelar' : 'Nuevo'}
             </button>
             <button type="button" className="danger" disabled={busy} onClick={handleDeleteAll}>
@@ -138,29 +223,36 @@ export function ProductsPage() {
       </form>
 
       {showForm && (
-        <form className="card" onSubmit={handleCreate}>
+        <form className="card" onSubmit={handleSubmit} key={editingProduct?.id ?? 'new'}>
           <div className="form-row">
             <label>
               Codigo principal
-              <input name="code" required maxLength={50} />
+              <input name="code" defaultValue={editingProduct?.code ?? ''} required maxLength={50} />
             </label>
             <label>
               Codigo auxiliar
-              <input name="auxiliary_code" maxLength={50} />
+              <input name="auxiliary_code" defaultValue={editingProduct?.auxiliary_code ?? ''} maxLength={50} />
             </label>
           </div>
           <label>
             Nombre
-            <input name="name" required />
+            <input name="name" defaultValue={editingProduct?.name ?? ''} required />
           </label>
           <div className="form-row">
             <label>
               Precio unitario
-              <input name="unit_price" type="number" step="0.01" min="0" required />
+              <input
+                name="unit_price"
+                type="number"
+                step="0.01"
+                min="0"
+                defaultValue={editingProduct?.unit_price ?? undefined}
+                required
+              />
             </label>
             <label>
               Tarifa IVA
-              <select name="tax_code" defaultValue="15">
+              <select name="tax_code" defaultValue={editingProduct?.tax_code ?? '15'}>
                 {Object.entries(TAX_CODE_LABELS).map(([value, label]) => (
                   <option key={value} value={value}>
                     {label}
@@ -172,55 +264,187 @@ export function ProductsPage() {
           <div className="form-row">
             <label>
               IVA %
-              <input name="tax_rate" type="number" step="0.01" min="0" max="100" defaultValue={15} required />
+              <input
+                name="tax_rate"
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                defaultValue={editingProduct?.tax_rate ?? 15}
+                required
+              />
             </label>
             <label>
               ICE %
-              <input name="ice_rate" type="number" step="0.01" min="0" max="100" defaultValue={0} />
+              <input
+                name="ice_rate"
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                defaultValue={editingProduct?.ice_rate ?? 0}
+              />
             </label>
           </div>
-          <button type="submit" className="primary">
-            Crear
-          </button>
+
+          <span className="section-label">Punto de venta</span>
+
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              name="pos_enabled"
+              checked={posEnabledField}
+              onChange={(e) => setPosEnabledField(e.target.checked)}
+            />
+            Mostrar en Punto de venta
+          </label>
+
+          {posEnabledField && (
+            <div className="form-row">
+              <label>
+                Categoria
+                <select name="pos_category_id" defaultValue={editingProduct?.pos_category_id ?? ''}>
+                  <option value="">Sin categoria</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Nombre corto (POS)
+                <input
+                  name="pos_label"
+                  defaultValue={editingProduct?.pos_label ?? ''}
+                  maxLength={255}
+                  placeholder="Si esta vacio, usa el nombre normal"
+                />
+              </label>
+              <label>
+                Codigo de barras
+                <input name="barcode" defaultValue={editingProduct?.barcode ?? ''} maxLength={100} />
+              </label>
+              <label>
+                Orden
+                <input
+                  name="pos_sort_order"
+                  type="number"
+                  min="0"
+                  defaultValue={editingProduct?.pos_sort_order ?? 0}
+                />
+              </label>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button type="submit" className="primary">
+              {editingProduct ? 'Guardar cambios' : 'Crear'}
+            </button>
+            {editingProduct && (
+              <button type="button" onClick={closeForm}>
+                Cancelar
+              </button>
+            )}
+          </div>
         </form>
       )}
+
+      <div className="card" style={{ marginBottom: 20 }}>
+        <button type="button" onClick={() => setShowCategories((v) => !v)}>
+          <i className="fa-solid fa-tags" /> {showCategories ? 'Ocultar categorias POS' : 'Categorias POS'}
+        </button>
+        {showCategories && (
+          <div style={{ marginTop: 12 }}>
+            <form className="form-row" onSubmit={handleCreateCategory} style={{ marginBottom: 12 }}>
+              <label>
+                Nueva categoria
+                <input
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  placeholder="Ej: Helados"
+                />
+              </label>
+              <button type="submit" className="primary" style={{ alignSelf: 'flex-end' }}>
+                <i className="fa-solid fa-plus" /> Agregar
+              </button>
+            </form>
+            {categories.length === 0 ? (
+              <p className="muted-inline">Aun no tienes categorias de POS.</p>
+            ) : (
+              <ul className="pos-category-manager-list">
+                {categories.map((cat) => (
+                  <li key={cat.id}>
+                    <span>{cat.name}</span>
+                    <button type="button" className="icon-btn delete" onClick={() => handleDeleteCategory(cat.id)}>
+                      <i className="fa-solid fa-trash" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+      </div>
 
       <span className="section-label">Lista de productos ({total})</span>
       {loading ? (
         <p>Cargando...</p>
       ) : (
         <>
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Codigo principal</th>
-                <th>Codigo auxiliar</th>
-                <th>Nombre</th>
-                <th>Valor</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {products.map((product) => (
-                <tr key={product.id}>
-                  <td>{product.code}</td>
-                  <td>{product.auxiliary_code ?? '-'}</td>
-                  <td>{product.name}</td>
-                  <td>${product.unit_price}</td>
-                  <td>
-                    <button type="button" className="icon-btn delete" onClick={() => handleDelete(product.id)}>
-                      <i className="fa-solid fa-trash" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {products.length === 0 && (
+          <div className="table-scroll">
+            <table className="data-table">
+              <thead>
                 <tr>
-                  <td colSpan={5}>No hay productos todavia.</td>
+                  <th>Codigo principal</th>
+                  <th>Codigo auxiliar</th>
+                  <th>Nombre</th>
+                  <th>Valor</th>
+                  <th>Acciones</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {products.map((product) => (
+                  <tr key={product.id}>
+                    <td>{product.code}</td>
+                    <td>{product.auxiliary_code ?? '-'}</td>
+                    <td>
+                      {product.name}
+                      {product.pos_enabled && <span className="badge pos-badge">POS</span>}
+                    </td>
+                    <td>${product.unit_price}</td>
+                    <td>
+                      <div className="row-actions">
+                        <button
+                          type="button"
+                          className="icon-btn"
+                          title="Editar producto"
+                          aria-label="Editar producto"
+                          onClick={() => openEditForm(product)}
+                        >
+                          <i className="fa-solid fa-pen" />
+                        </button>
+                        <button
+                          type="button"
+                          className="icon-btn delete"
+                          title="Eliminar producto"
+                          aria-label="Eliminar producto"
+                          onClick={() => handleDelete(product.id)}
+                        >
+                          <i className="fa-solid fa-trash" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {products.length === 0 && (
+                  <tr>
+                    <td colSpan={5}>No hay productos todavia.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
 
           {lastPage > 1 && (
             <div className="invoice-actions-bar" style={{ justifyContent: 'center' }}>

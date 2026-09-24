@@ -34,6 +34,9 @@ export function AppShell() {
             <>
               <Link to="/customers">Clientes</Link>
               <Link to="/invoices">Facturas</Link>
+              <Link to="/pos">
+                <i className="fa-solid fa-cash-register" /> Punto de venta
+              </Link>
               <Link to="/settings">
                 <i className="fa-solid fa-gear" /> Configuracion
               </Link>

@@ -137,7 +137,12 @@ export type Invoice = {
   emission_point?: string | null
   payment_methods?: Array<{ id: number; method: PaymentMethod; value: string; term_value: number | null; term_unit: PaymentTermUnit | null }>
   additional_fields?: Array<{ id: number; name: string; description: string }>
-  events?: Array<{ id: number; event: string; payload: { messages?: string[] } | null; created_at: string }>
+  events?: Array<{
+    id: number
+    event: string
+    payload: { messages?: string[]; error?: string; job?: string } | null
+    created_at: string
+  }>
 }
 
 type PaginatedResponse<T> = { data: T[] }

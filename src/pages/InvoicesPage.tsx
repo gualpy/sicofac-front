@@ -343,18 +343,38 @@ export function InvoicesPage() {
                               })()}
                             {(invoice.status === 'rejected' || invoice.status === 'failed') && (
                               <div>
-                                <span className="section-label">Mensajes del SRI</span>
                                 {(() => {
                                   const lastEvent = [...(expandedDetail.events ?? [])].reverse()[0]
                                   const messages = lastEvent?.payload?.messages ?? []
-                                  return messages.length > 0 ? (
-                                    <ul className="invoice-detail-items">
-                                      {messages.map((message, i) => (
-                                        <li key={i}>{message}</li>
-                                      ))}
-                                    </ul>
-                                  ) : (
-                                    <p className="muted-inline">No hay mensajes detallados disponibles.</p>
+                                  const technicalError = lastEvent?.payload?.error
+
+                                  if (messages.length > 0) {
+                                    return (
+                                      <>
+                                        <span className="section-label">Mensajes del SRI</span>
+                                        <ul className="invoice-detail-items">
+                                          {messages.map((message, i) => (
+                                            <li key={i}>{message}</li>
+                                          ))}
+                                        </ul>
+                                      </>
+                                    )
+                                  }
+
+                                  if (technicalError) {
+                                    return (
+                                      <>
+                                        <span className="section-label">Error tecnico</span>
+                                        <p className="muted-inline">{technicalError}</p>
+                                      </>
+                                    )
+                                  }
+
+                                  return (
+                                    <>
+                                      <span className="section-label">Mensajes del SRI</span>
+                                      <p className="muted-inline">No hay mensajes detallados disponibles.</p>
+                                    </>
                                   )
                                 })()}
                               </div>

@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import {
   listProducts,
   createProduct,
@@ -7,6 +7,7 @@ import {
   deleteAllProducts,
   downloadProductsExport,
   TAX_CODE_LABELS,
+  TAX_CODE_FIXED_RATE,
   type Product,
   type TaxCode,
 } from '../api/products'
@@ -32,10 +33,12 @@ export function ProductsPage() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [busy, setBusy] = useState(false)
   const [posEnabledField, setPosEnabledField] = useState(false)
+  const [taxCodeField, setTaxCodeField] = useState<TaxCode>('15')
 
   const [categories, setCategories] = useState<PosCategory[]>([])
   const [showCategories, setShowCategories] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
+  const formRef = useRef<HTMLFormElement>(null)
 
   useEffect(() => {
     if (company) refresh(company.id, 1)
@@ -95,6 +98,7 @@ export function ProductsPage() {
   function openCreateForm() {
     setEditingProduct(null)
     setPosEnabledField(false)
+    setTaxCodeField('15')
     setShowForm(true)
     setError(null)
   }
@@ -102,14 +106,22 @@ export function ProductsPage() {
   function openEditForm(product: Product) {
     setEditingProduct(product)
     setPosEnabledField(product.pos_enabled)
+    setTaxCodeField(product.tax_code)
     setShowForm(true)
     setError(null)
   }
+
+  useEffect(() => {
+    if (editingProduct) {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }, [editingProduct])
 
   function closeForm() {
     setShowForm(false)
     setEditingProduct(null)
     setPosEnabledField(false)
+    setTaxCodeField('15')
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -223,7 +235,7 @@ export function ProductsPage() {
       </form>
 
       {showForm && (
-        <form className="card" onSubmit={handleSubmit} key={editingProduct?.id ?? 'new'}>
+        <form className="card" onSubmit={handleSubmit} key={editingProduct?.id ?? 'new'} ref={formRef}>
           <div className="form-row">
             <label>
               Codigo principal
@@ -252,7 +264,11 @@ export function ProductsPage() {
             </label>
             <label>
               Tarifa IVA
-              <select name="tax_code" defaultValue={editingProduct?.tax_code ?? '15'}>
+              <select
+                name="tax_code"
+                value={taxCodeField}
+                onChange={(e) => setTaxCodeField(e.target.value as TaxCode)}
+              >
                 {Object.entries(TAX_CODE_LABELS).map(([value, label]) => (
                   <option key={value} value={value}>
                     {label}
@@ -264,15 +280,25 @@ export function ProductsPage() {
           <div className="form-row">
             <label>
               IVA %
-              <input
-                name="tax_rate"
-                type="number"
-                step="0.01"
-                min="0"
-                max="100"
-                defaultValue={editingProduct?.tax_rate ?? 15}
-                required
-              />
+              {TAX_CODE_FIXED_RATE[taxCodeField] === null ? (
+                <input
+                  name="tax_rate"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  defaultValue={editingProduct?.tax_rate ?? ''}
+                  required
+                />
+              ) : (
+                <input
+                  name="tax_rate"
+                  type="number"
+                  value={TAX_CODE_FIXED_RATE[taxCodeField] ?? 0}
+                  readOnly
+                  title="Determinado automaticamente por la Tarifa IVA"
+                />
+              )}
             </label>
             <label>
               ICE %

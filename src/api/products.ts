@@ -11,6 +11,21 @@ export const TAX_CODE_LABELS: Record<TaxCode, string> = {
   exento: 'Exento de IVA',
 }
 
+/**
+ * IVA % implied by each tax code, or null when the code doesn't fix a
+ * single rate ("especial" varies case by case and needs a manual value).
+ * Mirrors TaxCode::fixedRate() on the backend, which is the actual source
+ * of truth enforced on save.
+ */
+export const TAX_CODE_FIXED_RATE: Record<TaxCode, number | null> = {
+  '15': 15,
+  '5': 5,
+  especial: null,
+  '0': 0,
+  no_objeto: 0,
+  exento: 0,
+}
+
 export type Product = {
   id: number
   company_id: number

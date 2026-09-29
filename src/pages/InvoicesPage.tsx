@@ -29,6 +29,15 @@ function formatInvoiceNumber(invoice: Invoice): string {
   return `${invoice.document_code}-${String(invoice.sequential).padStart(9, '0')}`
 }
 
+/**
+ * Online cancellation deadline per SRI Resolucion NAC-DGERCGC25-00000014:
+ * day 10 of the month after issue_date. Does not adjust for holidays.
+ */
+function getAnnulmentDeadline(issueDate: string): Date {
+  const d = new Date(issueDate)
+  return new Date(d.getFullYear(), d.getMonth() + 1, 10)
+}
+
 function formatDateTime(value: string): string {
   const date = new Date(value)
   const datePart = date.toLocaleDateString('es-EC', {
@@ -316,6 +325,22 @@ export function InvoicesPage() {
                                 ))}
                               </ul>
                             </div>
+                            {invoice.status === 'authorized' &&
+                              invoice.customer_id &&
+                              (() => {
+                                const deadline = getAnnulmentDeadline(invoice.issue_date)
+                                if (new Date() > deadline) return null
+                                const label = deadline.toLocaleDateString('es-EC', {
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                })
+                                return (
+                                  <p className="muted-inline">
+                                    En caso de errores en la factura, eliminar desde el portal del SRI hasta el{' '}
+                                    {label}.
+                                  </p>
+                                )
+                              })()}
                             {(invoice.status === 'rejected' || invoice.status === 'failed') && (
                               <div>
                                 <span className="section-label">Mensajes del SRI</span>

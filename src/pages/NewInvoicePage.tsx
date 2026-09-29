@@ -12,9 +12,10 @@ import {
 } from '../api/invoices'
 import { listEstablishments, type Establishment } from '../api/companies'
 import { TAX_CODE_LABELS, type TaxCode, type Product } from '../api/products'
-import { getCustomer, type Customer } from '../api/customers'
+import { getCustomer, createCustomer, type Customer } from '../api/customers'
 import { useCompany } from '../company/CompanyContext'
-import { CustomerSearchField } from '../components/CustomerSearchField'
+import { CustomerSearchField, looksLikeIdentification } from '../components/CustomerSearchField'
+import { CustomerForm, type CustomerFormValues } from '../components/CustomerForm'
 import { ProductSearchField } from '../components/ProductSearchField'
 import { computeLiveTotals } from '../utils/invoiceTotals'
 
@@ -22,6 +23,22 @@ function taxRateForCode(code: TaxCode): number {
   if (code === '15') return 15
   if (code === '5') return 5
   return 0
+}
+
+function extractErrorMessage(err: unknown, fallback: string): string {
+  const data = (err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } })
+    ?.response?.data
+  const firstFieldError = data?.errors ? Object.values(data.errors)[0]?.[0] : undefined
+  return firstFieldError ?? data?.message ?? fallback
+}
+
+function guessIdentification(term: string): CustomerFormValues {
+  const digits = term.replace(/\D/g, '')
+  if (!looksLikeIdentification(term)) return {}
+  return {
+    identification_number: digits,
+    identification_type: digits.length === 13 ? '04' : '05',
+  }
 }
 
 export function NewInvoicePage() {
@@ -39,6 +56,10 @@ export function NewInvoicePage() {
   const [isNegotiable, setIsNegotiable] = useState(false)
 
   const [customer, setCustomer] = useState<Customer | null>(null)
+  const [customerDrawerOpen, setCustomerDrawerOpen] = useState(false)
+  const [customerDrawerInitial, setCustomerDrawerInitial] = useState<CustomerFormValues>({})
+  const [customerDrawerError, setCustomerDrawerError] = useState<string | null>(null)
+  const [customerDrawerSubmitting, setCustomerDrawerSubmitting] = useState(false)
   const [items, setItems] = useState<InvoiceItemInput[]>([])
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('no_utiliza_sist_financiero')
 
@@ -117,7 +138,44 @@ export function NewInvoicePage() {
     }
   }, [company, invoiceId])
 
+  useEffect(() => {
+    if (!customerDrawerOpen) return
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') closeCustomerDrawer()
+    }
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [customerDrawerOpen])
+
   if (!company) return null
+
+  function openCustomerDrawer(term: string) {
+    setCustomerDrawerInitial(guessIdentification(term))
+    setCustomerDrawerError(null)
+    setCustomerDrawerOpen(true)
+  }
+
+  function closeCustomerDrawer() {
+    setCustomerDrawerOpen(false)
+    setCustomerDrawerError(null)
+  }
+
+  async function handleCreateCustomerFromDrawer(payload: Parameters<typeof createCustomer>[1]) {
+    if (!company) return
+    setCustomerDrawerError(null)
+    setCustomerDrawerSubmitting(true)
+    try {
+      const created = await createCustomer(company.id, payload)
+      setCustomer(created)
+      closeCustomerDrawer()
+    } catch (err) {
+      setCustomerDrawerError(
+        extractErrorMessage(err, 'No se pudo crear el cliente. Revisa que la identificacion no este repetida.'),
+      )
+    } finally {
+      setCustomerDrawerSubmitting(false)
+    }
+  }
 
   const selectedEstablishment = establishments.find((e) => e.id === establishmentId) ?? null
   const emissionPoints = selectedEstablishment?.emission_points ?? []
@@ -299,7 +357,11 @@ export function NewInvoicePage() {
         <div>
           <div className="facturar-a-row">
             <span className="section-label">Facturar a</span>
-            <CustomerSearchField companyId={company.id} onSelect={setCustomer} />
+            <CustomerSearchField
+              companyId={company.id}
+              onSelect={setCustomer}
+              onCreateNew={(term) => openCustomerDrawer(term)}
+            />
           </div>
           {customer ? (
             <div className="selected-card">
@@ -521,6 +583,27 @@ export function NewInvoicePage() {
           </button>
         </div>
       </div>}
+
+      {customerDrawerOpen && (
+        <div className="pos-overlay pos-drawer-overlay">
+          <div className="pos-drawer-panel">
+            <div className="page-header">
+              <h2>Nuevo cliente</h2>
+              <button type="button" onClick={closeCustomerDrawer} aria-label="Cerrar">
+                <i className="fa-solid fa-xmark" />
+              </button>
+            </div>
+            <CustomerForm
+              initialValues={customerDrawerInitial}
+              submitLabel="Guardar cliente"
+              submitting={customerDrawerSubmitting}
+              error={customerDrawerError}
+              onSubmit={handleCreateCustomerFromDrawer}
+              onCancel={closeCustomerDrawer}
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

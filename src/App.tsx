@@ -14,6 +14,7 @@ import { InvoicesPage } from './pages/InvoicesPage'
 import { NewInvoicePage } from './pages/NewInvoicePage'
 import { SettingsPage } from './pages/SettingsPage'
 import { PosPage } from './pages/PosPage'
+import { TicketPage } from './pages/TicketPage'
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
             <Route path="/register" element={<RegisterPage />} />
             <Route element={<ProtectedRoute />}>
               <Route path="/pos" element={<PosPage />} />
+              <Route path="/invoices/:id/ticket" element={<TicketPage />} />
               <Route element={<AppShell />}>
                 <Route path="/" element={<DashboardPage />} />
                 <Route path="/company" element={<CompanyPage />} />

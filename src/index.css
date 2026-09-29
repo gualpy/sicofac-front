@@ -929,6 +929,24 @@ table.data-table {
   color: var(--text-muted);
 }
 
+.search-no-results {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.search-no-results .muted-inline {
+  margin: 0;
+}
+
+.search-create-new {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
 /* Selected customer card */
 
 .selected-card {
@@ -1504,6 +1522,27 @@ table.data-table {
   overflow-y: auto;
 }
 
+.pos-drawer-overlay {
+  justify-content: flex-end;
+  padding: 0;
+}
+
+.pos-drawer-panel {
+  width: 420px;
+  max-width: 100%;
+  height: 100%;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  overflow-y: auto;
+}
+
+@media (max-width: 640px) {
+  .pos-drawer-panel {
+    width: 100%;
+  }
+}
+
 .pos-payment-options {
   display: flex;
   gap: 8px;
@@ -1579,5 +1618,106 @@ table.data-table {
   .pos-back-link {
     order: 3;
     width: 100%;
+  }
+}
+
+/* Thermal ticket (80mm) */
+
+.ticket-page-wrap {
+  min-height: 100vh;
+  background: var(--bg);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.ticket-page-toolbar {
+  width: 100%;
+  max-width: 340px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ticket-80mm {
+  width: 80mm;
+  max-width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  padding: 10px 12px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-h);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ticket-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 2px;
+}
+
+.ticket-small {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.ticket-test-banner {
+  font-weight: 700;
+  color: var(--warning);
+}
+
+.ticket-rule {
+  border-top: 1px dashed var(--border);
+  margin: 4px 0;
+}
+
+.ticket-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ticket-item-sub {
+  color: var(--text-muted);
+}
+
+.ticket-total {
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.ticket-break {
+  word-break: break-all;
+  text-align: center;
+}
+
+@media print {
+  .ticket-page-toolbar {
+    display: none;
+  }
+
+  .ticket-page-wrap {
+    padding: 0;
+    background: none;
+    min-height: 0;
+  }
+
+  .ticket-80mm {
+    border: none;
+    box-shadow: none;
+    width: 100%;
+  }
+
+  @page {
+    size: 80mm auto;
+    margin: 0;
   }
 }

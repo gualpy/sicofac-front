@@ -5,9 +5,26 @@ import { useDebouncedValue } from '../hooks/useDebouncedValue'
 type Props = {
   companyId: number
   onSelect: (customer: Customer) => void
+  /**
+   * When provided, a search with zero results shows a "no encontramos este
+   * cliente" affordance that calls this with the raw search term instead of
+   * silently doing nothing. Optional so other consumers (e.g. Nueva Factura)
+   * keep their exact current behavior unless they opt in.
+   */
+  onCreateNew?: (term: string) => void
 }
 
-export function CustomerSearchField({ companyId, onSelect }: Props) {
+/**
+ * Best-effort guess at whether a search term looks like an Ecuadorian
+ * identification number, used only to decide button wording — never to
+ * validate or gate anything. 13 digits -> RUC, 9-10 digits -> Cedula.
+ */
+export function looksLikeIdentification(term: string): boolean {
+  const digits = term.replace(/\D/g, '')
+  return digits.length === 9 || digits.length === 10 || digits.length === 13
+}
+
+export function CustomerSearchField({ companyId, onSelect, onCreateNew }: Props) {
   const [term, setTerm] = useState('')
   const [results, setResults] = useState<Customer[]>([])
   const [open, setOpen] = useState(false)
@@ -99,6 +116,17 @@ export function CustomerSearchField({ companyId, onSelect }: Props) {
             </li>
           ))}
         </ul>
+      )}
+      {onCreateNew && open && results.length === 0 && term.trim().length > 0 && (
+        <div className="search-results search-no-results">
+          <p className="muted-inline">No encontramos este cliente.</p>
+          <button type="button" className="search-create-new" onClick={() => onCreateNew(term.trim())}>
+            <i className="fa-solid fa-plus" />{' '}
+            {looksLikeIdentification(term.trim())
+              ? `Crear cliente con ${term.trim()}`
+              : 'Crear nuevo cliente'}
+          </button>
+        </div>
       )}
     </div>
   )

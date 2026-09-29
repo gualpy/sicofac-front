@@ -34,6 +34,7 @@ export function ProductsPage() {
   const [busy, setBusy] = useState(false)
   const [posEnabledField, setPosEnabledField] = useState(false)
   const [taxCodeField, setTaxCodeField] = useState<TaxCode>('15')
+  const [hasIce, setHasIce] = useState(false)
 
   const [categories, setCategories] = useState<PosCategory[]>([])
   const [showCategories, setShowCategories] = useState(false)
@@ -99,6 +100,7 @@ export function ProductsPage() {
     setEditingProduct(null)
     setPosEnabledField(false)
     setTaxCodeField('15')
+    setHasIce(false)
     setShowForm(true)
     setError(null)
   }
@@ -107,6 +109,7 @@ export function ProductsPage() {
     setEditingProduct(product)
     setPosEnabledField(product.pos_enabled)
     setTaxCodeField(product.tax_code)
+    setHasIce(Number(product.ice_rate) > 0)
     setShowForm(true)
     setError(null)
   }
@@ -122,6 +125,7 @@ export function ProductsPage() {
     setEditingProduct(null)
     setPosEnabledField(false)
     setTaxCodeField('15')
+    setHasIce(false)
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -140,6 +144,7 @@ export function ProductsPage() {
       tax_rate: Number(form.get('tax_rate')),
       tax_code: form.get('tax_code') as TaxCode,
       ice_rate: Number(form.get('ice_rate') || 0),
+      ice_code: Number(form.get('ice_rate') || 0) > 0 ? String(form.get('ice_code') || '') || undefined : undefined,
       pos_enabled: posEnabled,
       pos_category_id: posEnabled && form.get('pos_category_id') ? Number(form.get('pos_category_id')) : undefined,
       pos_label: posEnabled ? String(form.get('pos_label') || '') || undefined : undefined,
@@ -309,8 +314,26 @@ export function ProductsPage() {
                 min="0"
                 max="100"
                 defaultValue={editingProduct?.ice_rate ?? 0}
+                onChange={(e) => setHasIce(Number(e.target.value || 0) > 0)}
               />
             </label>
+            {hasIce && (
+              <label>
+                Codigo ICE (Tabla 18)
+                <input
+                  name="ice_code"
+                  defaultValue={editingProduct?.ice_code ?? ''}
+                  maxLength={4}
+                  pattern="\d{4}"
+                  placeholder="Ej. 3072"
+                  required
+                />
+                <span className="muted-inline">
+                  Codigo de categoria ICE segun la Tabla 18 del SRI. Consulta la Ficha Tecnica del SRI
+                  para el codigo exacto de tu producto.
+                </span>
+              </label>
+            )}
           </div>
 
           <span className="section-label">Punto de venta</span>

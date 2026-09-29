@@ -36,6 +36,7 @@ export type Product = {
   tax_rate: string
   tax_code: TaxCode
   ice_rate: string
+  ice_code: string | null
   is_active: boolean
   pos_enabled: boolean
   pos_category_id: number | null
@@ -59,6 +60,7 @@ export type CreateProductPayload = {
   tax_rate: number
   tax_code?: TaxCode
   ice_rate?: number
+  ice_code?: string
   is_active?: boolean
   pos_enabled?: boolean
   pos_category_id?: number | null

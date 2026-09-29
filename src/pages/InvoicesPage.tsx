@@ -29,12 +29,18 @@ function formatInvoiceNumber(invoice: Invoice): string {
   return `${invoice.document_code}-${String(invoice.sequential).padStart(9, '0')}`
 }
 
-function formatDate(issueDate: string): string {
-  return new Date(issueDate).toLocaleDateString('es-EC', {
+function formatDateTime(value: string): string {
+  const date = new Date(value)
+  const datePart = date.toLocaleDateString('es-EC', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
   })
+  const timePart = date.toLocaleTimeString('es-EC', {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+  return `${datePart} ${timePart}`
 }
 
 export function InvoicesPage() {
@@ -229,7 +235,7 @@ export function InvoicesPage() {
                   <tr>
                     <td>{formatInvoiceNumber(invoice)}</td>
                     <td>{invoice.customer?.name ?? 'Consumidor final'}</td>
-                    <td>{formatDate(invoice.issue_date)}</td>
+                    <td>{formatDateTime(invoice.created_at)}</td>
                     <td>${invoice.total}</td>
                     <td>
                       <span className={`badge ${invoice.status}`}>
@@ -271,9 +277,19 @@ export function InvoicesPage() {
                               </>
                             )}
                             {invoice.status === 'authorized' && (
-                              <button type="button" onClick={() => handleRide(invoice.id)}>
-                                <i className="fa-solid fa-file-pdf" /> Descargar RIDE
-                              </button>
+                              <>
+                                <button type="button" onClick={() => handleRide(invoice.id)}>
+                                  <i className="fa-solid fa-file-pdf" /> Descargar RIDE
+                                </button>
+                                <Link
+                                  to={`/invoices/${invoice.id}/ticket`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={() => setOpenMenuId(null)}
+                                >
+                                  <i className="fa-solid fa-receipt" /> Imprimir ticket
+                                </Link>
+                              </>
                             )}
                             <button type="button" onClick={() => toggleDetail(invoice)}>
                               <i className="fa-solid fa-eye" /> Ver detalle

@@ -72,6 +72,7 @@ export type InvoiceItemInput = {
   tax_rate?: number
   tax_code?: TaxCode
   ice_rate?: number
+  ice_code?: string
   product_id?: number
 }
 
@@ -94,7 +95,10 @@ export type Invoice = {
   document_code: string
   sequential: number
   issue_date: string
+  created_at: string
   status: string
+  access_key: string | null
+  sri_authorization_number: string | null
   currency: string
   guide_number: string | null
   is_negotiable: boolean
@@ -126,6 +130,7 @@ export type Invoice = {
     tax_rate: string
     tax_code: TaxCode
     ice_rate: string
+    ice_code: string | null
     total: string
   }>
   establishment_code?: string | null

@@ -82,6 +82,7 @@ export function NewInvoicePage() {
             tax_rate: Number(item.tax_rate),
             tax_code: item.tax_code,
             ice_rate: Number(item.ice_rate),
+            ice_code: item.ice_code ?? undefined,
             product_id: item.product_id ?? undefined,
           })),
         )
@@ -136,6 +137,7 @@ export function NewInvoicePage() {
         tax_rate: Number(product.tax_rate),
         tax_code: product.tax_code,
         ice_rate: Number(product.ice_rate),
+        ice_code: product.ice_code ?? undefined,
         product_id: product.id,
       },
     ])

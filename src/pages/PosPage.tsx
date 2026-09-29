@@ -16,8 +16,25 @@ import {
 import { computeLiveTotals } from '../utils/invoiceTotals'
 import { useCompany } from '../company/CompanyContext'
 import { useDebouncedValue } from '../hooks/useDebouncedValue'
-import { CustomerSearchField } from '../components/CustomerSearchField'
-import type { Customer } from '../api/customers'
+import { CustomerSearchField, looksLikeIdentification } from '../components/CustomerSearchField'
+import { CustomerForm, type CustomerFormValues } from '../components/CustomerForm'
+import { createCustomer, type Customer } from '../api/customers'
+
+function extractErrorMessage(err: unknown, fallback: string): string {
+  const data = (err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } })
+    ?.response?.data
+  const firstFieldError = data?.errors ? Object.values(data.errors)[0]?.[0] : undefined
+  return firstFieldError ?? data?.message ?? fallback
+}
+
+function guessIdentification(term: string): CustomerFormValues {
+  const digits = term.replace(/\D/g, '')
+  if (!looksLikeIdentification(term)) return {}
+  return {
+    identification_number: digits,
+    identification_type: digits.length === 13 ? '04' : '05',
+  }
+}
 
 type CartLine = {
   product: Product
@@ -51,6 +68,7 @@ function cartToItems(cart: CartLine[]): InvoiceItemInput[] {
     tax_rate: Number(line.product.tax_rate),
     tax_code: line.product.tax_code,
     ice_rate: Number(line.product.ice_rate),
+    ice_code: line.product.ice_code ?? undefined,
     product_id: line.product.id,
   }))
 }
@@ -68,6 +86,10 @@ export function PosPage() {
   const [cart, setCart] = useState<CartLine[]>([])
   const [customer, setCustomer] = useState<Customer | null>(null)
   const [customerPickerOpen, setCustomerPickerOpen] = useState(false)
+  const [customerDrawerOpen, setCustomerDrawerOpen] = useState(false)
+  const [customerDrawerInitial, setCustomerDrawerInitial] = useState<CustomerFormValues>({})
+  const [customerDrawerError, setCustomerDrawerError] = useState<string | null>(null)
+  const [customerDrawerSubmitting, setCustomerDrawerSubmitting] = useState(false)
 
   const [checkoutOpen, setCheckoutOpen] = useState(false)
   const [paymentKey, setPaymentKey] = useState<PosPaymentOption['key']>('efectivo')
@@ -146,10 +168,51 @@ export function PosPage() {
   const isCash = paymentKey === 'efectivo'
   const canConfirm = !isCash || (received >= totals.total && cashReceived !== '')
 
+  function openCustomerDrawer(term: string) {
+    setCustomerDrawerInitial(guessIdentification(term))
+    setCustomerDrawerError(null)
+    setCustomerDrawerOpen(true)
+  }
+
+  function closeCustomerDrawer() {
+    setCustomerDrawerOpen(false)
+    setCustomerDrawerError(null)
+  }
+
+  useEffect(() => {
+    if (!customerDrawerOpen) return
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') closeCustomerDrawer()
+    }
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [customerDrawerOpen])
+
+  async function handleCreateCustomerFromDrawer(payload: Parameters<typeof createCustomer>[1]) {
+    if (!company) return
+    setCustomerDrawerError(null)
+    setCustomerDrawerSubmitting(true)
+    try {
+      const created = await createCustomer(company.id, payload)
+      // Only the selected customer changes here — cart/category/search state
+      // above is untouched, the sale in progress survives intact.
+      setCustomer(created)
+      setCustomerPickerOpen(false)
+      closeCustomerDrawer()
+    } catch (err) {
+      setCustomerDrawerError(
+        extractErrorMessage(err, 'No se pudo crear el cliente. Revisa que la identificacion no este repetida.'),
+      )
+    } finally {
+      setCustomerDrawerSubmitting(false)
+    }
+  }
+
   function resetForNewSale() {
     setCart([])
     setCustomer(null)
     setCustomerPickerOpen(false)
+    setCustomerDrawerOpen(false)
     setCheckoutOpen(false)
     setPaymentKey('efectivo')
     setCashReceived('')
@@ -266,6 +329,10 @@ export function PosPage() {
                   onSelect={(c) => {
                     setCustomer(c)
                     setCustomerPickerOpen(false)
+                  }}
+                  onCreateNew={(term) => {
+                    setCustomerPickerOpen(false)
+                    openCustomerDrawer(term)
                   }}
                 />
                 {customer && (
@@ -410,6 +477,27 @@ export function PosPage() {
           </div>
         </div>
       )}
+
+      {customerDrawerOpen && (
+        <div className="pos-overlay pos-drawer-overlay">
+          <div className="pos-drawer-panel">
+            <div className="page-header">
+              <h2>Nuevo cliente</h2>
+              <button type="button" onClick={closeCustomerDrawer} aria-label="Cerrar">
+                <i className="fa-solid fa-xmark" />
+              </button>
+            </div>
+            <CustomerForm
+              initialValues={customerDrawerInitial}
+              submitLabel="Guardar cliente"
+              submitting={customerDrawerSubmitting}
+              error={customerDrawerError}
+              onSubmit={handleCreateCustomerFromDrawer}
+              onCancel={closeCustomerDrawer}
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -451,7 +539,19 @@ function PosSaleResult({ invoice, onNewSale }: { invoice: Invoice; onNewSale: ()
           </p>
         )}
 
-        <button type="button" className="primary pos-charge-button" onClick={onNewSale} style={{ marginTop: 24 }}>
+        {isAuthorized && (
+          <Link
+            to={`/invoices/${invoice.id}/ticket`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="button"
+            style={{ marginTop: 16 }}
+          >
+            <i className="fa-solid fa-receipt" /> Imprimir ticket
+          </Link>
+        )}
+
+        <button type="button" className="primary pos-charge-button" onClick={onNewSale} style={{ marginTop: 12 }}>
           <i className="fa-solid fa-plus" /> Nueva venta
         </button>
       </div>

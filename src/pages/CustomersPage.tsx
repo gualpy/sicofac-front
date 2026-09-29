@@ -1,12 +1,21 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState } from 'react'
 import {
   listCustomers,
   createCustomer,
   updateCustomer,
   deleteCustomer,
   type Customer,
+  type CreateCustomerPayload,
 } from '../api/customers'
 import { useCompany } from '../company/CompanyContext'
+import { CustomerForm } from '../components/CustomerForm'
+
+function extractErrorMessage(err: unknown, fallback: string): string {
+  const data = (err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } })
+    ?.response?.data
+  const firstFieldError = data?.errors ? Object.values(data.errors)[0]?.[0] : undefined
+  return firstFieldError ?? data?.message ?? fallback
+}
 
 function matchesSearch(customer: Customer, term: string): boolean {
   const needle = term.trim().toLowerCase()
@@ -34,6 +43,7 @@ export function CustomersPage() {
   const [error, setError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null)
+  const [submitting, setSubmitting] = useState(false)
   const [deletingId, setDeletingId] = useState<number | null>(null)
   const [openMenuId, setOpenMenuId] = useState<number | null>(null)
 
@@ -83,20 +93,10 @@ export function CustomersPage() {
     setEditingCustomer(null)
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+  async function handleSubmit(payload: CreateCustomerPayload) {
     if (!company) return
     setError(null)
-    const form = new FormData(event.currentTarget)
-    const payload = {
-      name: String(form.get('name')),
-      identification_type: String(form.get('identification_type')),
-      identification_number: String(form.get('identification_number')),
-      email: String(form.get('email') || '') || undefined,
-      phone: String(form.get('phone') || '') || undefined,
-      address: String(form.get('address') || '') || undefined,
-    }
-
+    setSubmitting(true)
     try {
       if (editingCustomer) {
         await updateCustomer(company.id, editingCustomer.id, payload)
@@ -105,12 +105,17 @@ export function CustomersPage() {
       }
       closeForm()
       refresh(company.id, editingCustomer ? page : 1)
-    } catch {
+    } catch (err) {
       setError(
-        editingCustomer
-          ? 'No se pudo actualizar el cliente. Revisa que la identificacion no este repetida.'
-          : 'No se pudo crear el cliente. Revisa que la identificacion no este repetida.',
+        extractErrorMessage(
+          err,
+          editingCustomer
+            ? 'No se pudo actualizar el cliente. Revisa que la identificacion no este repetida.'
+            : 'No se pudo crear el cliente. Revisa que la identificacion no este repetida.',
+        ),
       )
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -163,51 +168,13 @@ export function CustomersPage() {
       </div>
 
       {showForm && (
-        <form className="card" onSubmit={handleSubmit}>
-          <div className="form-row">
-            <label>
-              Nombre / Razon social
-              <input name="name" defaultValue={editingCustomer?.name ?? ''} required />
-            </label>
-            <label>
-              Email
-              <input name="email" type="email" defaultValue={editingCustomer?.email ?? ''} />
-            </label>
-          </div>
-          <div className="form-row">
-            <label>
-              Tipo identificacion
-              <select name="identification_type" defaultValue={editingCustomer?.identification_type ?? '05'}>
-                <option value="04">RUC</option>
-                <option value="05">Cedula</option>
-                <option value="06">Pasaporte</option>
-                <option value="07">Consumidor final</option>
-              </select>
-            </label>
-            <label>
-              Numero identificacion
-              <input
-                name="identification_number"
-                defaultValue={editingCustomer?.identification_number ?? ''}
-                required
-                maxLength={20}
-              />
-            </label>
-          </div>
-          <div className="form-row">
-            <label>
-              Telefono
-              <input name="phone" defaultValue={editingCustomer?.phone ?? ''} />
-            </label>
-            <label>
-              Direccion
-              <input name="address" defaultValue={editingCustomer?.address ?? ''} />
-            </label>
-          </div>
-          <button type="submit" className="primary">
-            {editingCustomer ? 'Guardar cambios' : 'Crear'}
-          </button>
-        </form>
+        <CustomerForm
+          key={editingCustomer?.id ?? 'new'}
+          initialValues={editingCustomer ?? undefined}
+          submitLabel={editingCustomer ? 'Guardar cambios' : 'Crear'}
+          submitting={submitting}
+          onSubmit={handleSubmit}
+        />
       )}
 
       {loading ? (

@@ -2,11 +2,9 @@ import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { isAxiosError } from 'axios'
 import { useAuth } from '../auth/AuthContext'
-import { useCompany } from '../company/CompanyContext'
 
 export function RegisterPage() {
   const { register } = useAuth()
-  const { selectCompany } = useCompany()
   const navigate = useNavigate()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -27,7 +25,7 @@ export function RegisterPage() {
     }
 
     try {
-      const company = await register({
+      await register({
         name,
         email,
         password,
@@ -35,8 +33,7 @@ export function RegisterPage() {
         company_ruc: companyRuc,
         company_environment: companyEnvironment,
       })
-      selectCompany(company)
-      navigate('/')
+      navigate('/check-email', { state: { email } })
     } catch (err) {
       if (isAxiosError(err) && err.response?.status === 422) {
         const firstError = Object.values(err.response.data?.errors ?? {})[0] as string[] | undefined

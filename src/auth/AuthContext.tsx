@@ -22,6 +22,7 @@ type AuthContextValue = {
   token: string | null
   login: (email: string, password: string) => Promise<void>
   register: (payload: RegisterPayload) => Promise<Company>
+  resendVerification: (email: string) => Promise<void>
   logout: () => Promise<void>
 }
 
@@ -39,11 +40,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function register(payload: RegisterPayload): Promise<Company> {
+    // No token/session here on purpose -- the account is created but stays
+    // "pendiente de confirmar" until the user clicks the emailed link, so
+    // there's nothing to log in with yet (see AuthController::register()).
     const { data } = await apiClient.post('/auth/register', payload)
-    localStorage.setItem('token', data.token)
-    setToken(data.token)
-    setUser(data.user)
     return data.company as Company
+  }
+
+  async function resendVerification(email: string): Promise<void> {
+    await apiClient.post('/auth/email/resend', { email })
   }
 
   async function logout() {
@@ -57,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, token, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, login, register, resendVerification, logout }}>
       {children}
     </AuthContext.Provider>
   )

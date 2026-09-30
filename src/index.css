@@ -1030,48 +1030,18 @@ table.data-table {
 
 /* Payment methods */
 
-.payment-methods {
+.payment-methods-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-}
-
-.payment-method-option {
-  display: flex;
-  align-items: center;
   gap: 10px;
-  font-size: 14px;
-  color: var(--text);
-  flex-direction: row;
 }
 
-.payment-method-option input {
-  width: auto;
-}
-
-@media (min-width: 700px) {
-  .payment-methods {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .payment-method-option {
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    padding: 6px 14px;
-    background: var(--surface);
-    cursor: pointer;
-    font-size: 13px;
-    gap: 8px;
-  }
-
-  .payment-method-option:has(input:checked) {
-    border-color: var(--accent);
-    background: var(--accent-pastel-bg);
-    color: var(--accent-strong);
-    font-weight: 600;
-  }
+.payment-methods-list .item-row {
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  flex-wrap: wrap;
 }
 
 /* Summary card */

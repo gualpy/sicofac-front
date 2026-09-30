@@ -5,10 +5,12 @@ import {
   updateInvoice,
   getInvoice,
   emitInvoice,
-  QUICK_PAYMENT_METHODS,
   PAYMENT_METHOD_LABELS,
+  PAYMENT_TERM_UNIT_LABELS,
   type InvoiceItemInput,
   type PaymentMethod,
+  type PaymentMethodInput,
+  type PaymentTermUnit,
 } from '../api/invoices'
 import { listEstablishments, type Establishment } from '../api/companies'
 import { TAX_CODE_LABELS, type TaxCode, type Product } from '../api/products'
@@ -61,7 +63,9 @@ export function NewInvoicePage() {
   const [customerDrawerError, setCustomerDrawerError] = useState<string | null>(null)
   const [customerDrawerSubmitting, setCustomerDrawerSubmitting] = useState(false)
   const [items, setItems] = useState<InvoiceItemInput[]>([])
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('no_utiliza_sist_financiero')
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethodInput[]>([
+    { method: 'no_utiliza_sist_financiero', value: 0 },
+  ])
 
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState<'draft' | 'emit' | null>(null)
@@ -108,8 +112,16 @@ export function NewInvoicePage() {
           })),
         )
 
-        const firstPaymentMethod = invoice.payment_methods?.[0]
-        if (firstPaymentMethod) setPaymentMethod(firstPaymentMethod.method)
+        if (invoice.payment_methods && invoice.payment_methods.length > 0) {
+          setPaymentMethods(
+            invoice.payment_methods.map((pm) => ({
+              method: pm.method,
+              value: Number(pm.value),
+              term_value: pm.term_value ?? undefined,
+              term_unit: pm.term_unit ?? undefined,
+            })),
+          )
+        }
 
         const est = list.find((e) => e.code === invoice.establishment_code) ?? list[0] ?? null
         setEstablishmentId(est?.id ?? null)
@@ -146,6 +158,17 @@ export function NewInvoicePage() {
     document.addEventListener('keydown', handleEscape)
     return () => document.removeEventListener('keydown', handleEscape)
   }, [customerDrawerOpen])
+
+  useEffect(() => {
+    // Keep the single-row case effortless (mirrors the old radio-button
+    // behaviour): only auto-fill the amount when there's exactly one
+    // payment method, since once the user splits it across several we
+    // can't guess how they want the total redistributed.
+    const liveTotal = computeLiveTotals(items).total
+    setPaymentMethods((rows) =>
+      rows.length === 1 && rows[0].value !== liveTotal ? [{ ...rows[0], value: liveTotal }] : rows,
+    )
+  }, [items])
 
   if (!company) return null
 
@@ -216,6 +239,22 @@ export function NewInvoicePage() {
     setItems((rows) => rows.filter((_, i) => i !== index))
   }
 
+  function addPaymentMethod() {
+    setPaymentMethods((rows) => [...rows, { method: 'no_utiliza_sist_financiero', value: 0 }])
+  }
+
+  function updatePaymentMethod(index: number, patch: Partial<PaymentMethodInput>) {
+    setPaymentMethods((rows) => rows.map((row, i) => (i === index ? { ...row, ...patch } : row)))
+  }
+
+  function removePaymentMethod(index: number) {
+    setPaymentMethods((rows) => rows.filter((_, i) => i !== index))
+  }
+
+  const paymentMethodsTotal = paymentMethods.reduce((sum, pm) => sum + (Number(pm.value) || 0), 0)
+  const paymentMethodsMismatch =
+    paymentMethods.length > 0 && Math.abs(paymentMethodsTotal - totals.total) > 0.01
+
   async function handleSubmit(mode: 'draft' | 'emit') {
     if (!company) return
     setError(null)
@@ -228,6 +267,10 @@ export function NewInvoicePage() {
       setError('Cada linea necesita codigo y descripcion.')
       return
     }
+    if (paymentMethodsMismatch) {
+      setError('La suma de las formas de pago no coincide con el total de la factura.')
+      return
+    }
 
     setSubmitting(mode)
     try {
@@ -238,7 +281,7 @@ export function NewInvoicePage() {
         guide_number: guideNumber || undefined,
         is_negotiable: isNegotiable,
         items,
-        payment_methods: [{ method: paymentMethod, value: totals.total }],
+        payment_methods: paymentMethods,
       }
 
       const invoice = isEdit && invoiceId !== null
@@ -515,19 +558,74 @@ export function NewInvoicePage() {
         <div className="two-col">
           <div>
             <span className="section-label">Forma de pago</span>
-            <div className="payment-methods">
-              {QUICK_PAYMENT_METHODS.map((method) => (
-                <label className="payment-method-option" key={method}>
-                  <input
-                    type="radio"
-                    name="payment_method"
-                    checked={paymentMethod === method}
-                    onChange={() => setPaymentMethod(method)}
-                  />
-                  {PAYMENT_METHOD_LABELS[method]}
-                </label>
+            <div className="payment-methods-list">
+              {paymentMethods.map((pm, index) => (
+                <div className="item-row" key={index}>
+                  <label>
+                    Metodo
+                    <select
+                      value={pm.method}
+                      onChange={(e) => updatePaymentMethod(index, { method: e.target.value as PaymentMethod })}
+                    >
+                      {(Object.keys(PAYMENT_METHOD_LABELS) as PaymentMethod[]).map((method) => (
+                        <option key={method} value={method}>
+                          {PAYMENT_METHOD_LABELS[method]}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Valor
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={pm.value}
+                      onChange={(e) => updatePaymentMethod(index, { value: Number(e.target.value) || 0 })}
+                    />
+                  </label>
+                  <label>
+                    Plazo (opcional)
+                    <input
+                      type="number"
+                      min="1"
+                      value={pm.term_value ?? ''}
+                      onChange={(e) =>
+                        updatePaymentMethod(index, {
+                          term_value: e.target.value ? Number(e.target.value) : undefined,
+                        })
+                      }
+                    />
+                  </label>
+                  <label>
+                    Unidad
+                    <select
+                      value={pm.term_unit ?? 'dias'}
+                      onChange={(e) => updatePaymentMethod(index, { term_unit: e.target.value as PaymentTermUnit })}
+                      disabled={!pm.term_value}
+                    >
+                      {(Object.keys(PAYMENT_TERM_UNIT_LABELS) as PaymentTermUnit[]).map((unit) => (
+                        <option key={unit} value={unit}>
+                          {PAYMENT_TERM_UNIT_LABELS[unit]}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  {paymentMethods.length > 1 && (
+                    <button type="button" className="icon-btn delete" onClick={() => removePaymentMethod(index)}>
+                      <i className="fa-solid fa-trash" />
+                    </button>
+                  )}
+                </div>
               ))}
             </div>
+            <button type="button" onClick={addPaymentMethod} style={{ marginTop: 8 }}>
+              <i className="fa-solid fa-plus" /> Agregar forma de pago
+            </button>
+            <p className="muted-inline" style={paymentMethodsMismatch ? { color: 'var(--danger)' } : undefined}>
+              Asignado: ${paymentMethodsTotal.toFixed(2)} de ${totals.total.toFixed(2)}
+              {paymentMethodsMismatch && ' — no coincide con el total'}
+            </p>
           </div>
 
           <div className="summary-card">

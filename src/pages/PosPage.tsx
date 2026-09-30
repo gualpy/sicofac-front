@@ -401,7 +401,7 @@ export function PosPage() {
 
           <button
             type="button"
-            className="primary pos-charge-button"
+            className="primary pos-large-button pos-charge-button"
             disabled={cart.length === 0}
             onClick={() => setCheckoutOpen(true)}
           >
@@ -467,7 +467,7 @@ export function PosPage() {
 
             <button
               type="button"
-              className="primary pos-charge-button"
+              className="primary pos-large-button pos-charge-button"
               disabled={!canConfirm || confirming}
               onClick={handleConfirmSale}
               style={{ marginTop: 16 }}
@@ -551,7 +551,7 @@ function PosSaleResult({ invoice, onNewSale }: { invoice: Invoice; onNewSale: ()
           </Link>
         )}
 
-        <button type="button" className="primary pos-charge-button" onClick={onNewSale} style={{ marginTop: 12 }}>
+        <button type="button" className="primary pos-large-button" onClick={onNewSale} style={{ marginTop: 12 }}>
           <i className="fa-solid fa-plus" /> Nueva venta
         </button>
       </div>

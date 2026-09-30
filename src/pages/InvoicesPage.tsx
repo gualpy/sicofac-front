@@ -9,6 +9,7 @@ import {
   openInvoiceRide,
   INVOICE_STATUS_LABELS,
   STATUS_FILTER_VALUES,
+  PAYMENT_METHOD_LABELS,
   type Invoice,
   type InvoiceStatusFilter,
 } from '../api/invoices'
@@ -234,6 +235,7 @@ export function InvoicesPage() {
                 <th>Cliente</th>
                 <th>Fecha</th>
                 <th>Total</th>
+                <th>Forma de pago</th>
                 <th>Estado</th>
                 <th>Acciones</th>
               </tr>
@@ -246,6 +248,11 @@ export function InvoicesPage() {
                     <td>{invoice.customer?.name ?? 'Consumidor final'}</td>
                     <td>{formatDateTime(invoice.created_at)}</td>
                     <td>${invoice.total}</td>
+                    <td>
+                      {invoice.payment_methods && invoice.payment_methods.length > 0
+                        ? invoice.payment_methods.map((pm) => PAYMENT_METHOD_LABELS[pm.method]).join(', ')
+                        : '-'}
+                    </td>
                     <td>
                       <span className={`badge ${invoice.status}`}>
                         {INVOICE_STATUS_LABELS[invoice.status] ?? invoice.status}
@@ -310,7 +317,7 @@ export function InvoicesPage() {
                   </tr>
                   {expandedId === invoice.id && (
                     <tr>
-                      <td colSpan={6} className="invoice-detail-row">
+                      <td colSpan={7} className="invoice-detail-row">
                         {expandedLoading || !expandedDetail ? (
                           <p>Cargando detalle...</p>
                         ) : (
@@ -388,7 +395,7 @@ export function InvoicesPage() {
               ))}
               {invoices.length === 0 && (
                 <tr>
-                  <td colSpan={6}>No hay facturas que coincidan con los filtros.</td>
+                  <td colSpan={7}>No hay facturas que coincidan con los filtros.</td>
                 </tr>
               )}
             </tbody>

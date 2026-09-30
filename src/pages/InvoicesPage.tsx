@@ -352,8 +352,30 @@ export function InvoicesPage() {
                               <div>
                                 {(() => {
                                   const lastEvent = [...(expandedDetail.events ?? [])].reverse()[0]
+                                  const details = lastEvent?.payload?.message_details ?? []
                                   const messages = lastEvent?.payload?.messages ?? []
                                   const technicalError = lastEvent?.payload?.error
+
+                                  if (details.length > 0) {
+                                    return (
+                                      <>
+                                        <span className="section-label">Mensajes del SRI</span>
+                                        <ul className="invoice-detail-items">
+                                          {details.map((detail, i) => (
+                                            <li key={i}>
+                                              {detail.type && (
+                                                <span className={`badge ${detail.type === 'ERROR' ? 'rejected' : 'processing'}`}>
+                                                  {detail.type}
+                                                </span>
+                                              )}{' '}
+                                              {detail.code && <strong>{detail.code}</strong>} {detail.message}
+                                              {detail.additional_info && ` — ${detail.additional_info}`}
+                                            </li>
+                                          ))}
+                                        </ul>
+                                      </>
+                                    )
+                                  }
 
                                   if (messages.length > 0) {
                                     return (

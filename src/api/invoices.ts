@@ -140,7 +140,12 @@ export type Invoice = {
   events?: Array<{
     id: number
     event: string
-    payload: { messages?: string[]; error?: string; job?: string } | null
+    payload: {
+      messages?: string[]
+      message_details?: Array<{ code: string | null; message: string; additional_info: string | null; type: string | null }>
+      error?: string
+      job?: string
+    } | null
     created_at: string
   }>
 }

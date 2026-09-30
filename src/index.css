@@ -21,7 +21,7 @@
   --danger-pastel-bg: #fef2f2;
   --table-header-bg: #f5f3ff;
   --table-row-hover: #f4f4f5;
-  --shadow: rgba(24, 24, 27, 0.04) 0 1px 2px, rgba(24, 24, 27, 0.06) 0 6px 16px -8px;
+  --shadow: rgba(24, 24, 27, 0.08) 0 1px 8px, rgba(24, 24, 27, 0.10) 0 6px 16px -8px;
 
   --sans: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;

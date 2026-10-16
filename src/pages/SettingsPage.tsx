@@ -2,14 +2,16 @@ import { useState } from 'react'
 import { useCompany } from '../company/CompanyContext'
 import { PerfilYFirmaTab } from '../components/settings/PerfilYFirmaTab'
 import { PuntosDeEmisionTab } from '../components/settings/PuntosDeEmisionTab'
+import { UsuariosTab } from '../components/settings/UsuariosTab'
 import { ProductsPage } from './ProductsPage'
 
-type Tab = 'perfil' | 'productos' | 'puntos'
+type Tab = 'perfil' | 'productos' | 'puntos' | 'usuarios'
 
 const TABS: Array<{ id: Tab; label: string; icon: string }> = [
   { id: 'perfil', label: 'Perfil y firma', icon: 'fa-id-badge' },
   { id: 'productos', label: 'Productos y servicios', icon: 'fa-boxes-stacked' },
   { id: 'puntos', label: 'Puntos de emision', icon: 'fa-code-branch' },
+  { id: 'usuarios', label: 'Usuarios', icon: 'fa-users' },
 ]
 
 export function SettingsPage() {
@@ -49,6 +51,7 @@ export function SettingsPage() {
           </div>
         )}
         {tab === 'puntos' && <PuntosDeEmisionTab companyId={company.id} companyTradeName={company.trade_name ?? company.name} />}
+        {tab === 'usuarios' && <UsuariosTab companyId={company.id} />}
       </div>
     </div>
   )

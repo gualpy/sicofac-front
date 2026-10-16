@@ -60,6 +60,9 @@ export function AppShell() {
                   <Link to="/settings" onClick={() => setMenuOpen(false)}>
                     <i className="fa-solid fa-gear" /> Configuracion
                   </Link>
+                  <Link to="/company" onClick={() => setMenuOpen(false)}>
+                    <i className="fa-solid fa-right-left" /> Cambiar empresa
+                  </Link>
                 </>
               )}
               <button type="button" onClick={() => handleLogout()}>

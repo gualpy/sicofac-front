@@ -8,6 +8,7 @@ import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
 import { CheckEmailPage } from './pages/CheckEmailPage'
 import { EmailConfirmedPage } from './pages/EmailConfirmedPage'
+import { AcceptInvitationPage } from './pages/AcceptInvitationPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { CompanyPage } from './pages/CompanyPage'
 import { CustomersPage } from './pages/CustomersPage'
@@ -29,6 +30,7 @@ function App() {
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/check-email" element={<CheckEmailPage />} />
             <Route path="/email-confirmado" element={<EmailConfirmedPage />} />
+            <Route path="/invitaciones/:token" element={<AcceptInvitationPage />} />
             <Route element={<ProtectedRoute />}>
               <Route path="/pos" element={<PosPage />} />
               <Route path="/invoices/:id/ticket" element={<TicketPage />} />

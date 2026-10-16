@@ -154,3 +154,38 @@ export async function updateEmissionPoint(
   )
   return data
 }
+
+export type CompanyRole = 'owner' | 'admin' | 'seller'
+
+export type CompanyMember = {
+  id: number
+  name: string
+  email: string
+  role: CompanyRole
+  status: 'active' | 'inactive'
+}
+
+export type PendingInvitation = {
+  id: number
+  email: string
+  role: CompanyRole
+  expires_at: string
+}
+
+export async function listMembers(
+  companyId: number,
+): Promise<{ members: CompanyMember[]; pending_invitations: PendingInvitation[] }> {
+  const { data } = await apiClient.get(`/companies/${companyId}/members`)
+  return data
+}
+
+export async function inviteMember(
+  companyId: number,
+  payload: { email: string; role: 'admin' | 'seller' },
+): Promise<void> {
+  await apiClient.post(`/companies/${companyId}/invitations`, payload)
+}
+
+export async function revokeInvitation(companyId: number, invitationId: number): Promise<void> {
+  await apiClient.delete(`/companies/${companyId}/invitations/${invitationId}`)
+}

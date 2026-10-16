@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import { AuthLayout } from '../components/auth/AuthLayout'
 
 export function CheckEmailPage() {
   const { resendVerification } = useAuth()
@@ -21,31 +22,37 @@ export function CheckEmailPage() {
   }
 
   return (
-    <div className="auth-page">
-      <div className="card narrow" style={{ textAlign: 'center' }}>
-        <i className="fa-solid fa-envelope-circle-check" style={{ fontSize: 40, color: 'var(--accent)' }} />
-        <h1>Revisa tu correo</h1>
-        <p className="muted-inline">
+    <AuthLayout
+      headlineTop="Ya casi"
+      headlineAccent="estamos listos."
+      subtitle="Un ultimo paso: confirma tu correo y empeza a facturar en minutos."
+    >
+      <div className="auth-card" style={{ textAlign: 'center' }}>
+        <div className="auth-card-icon" style={{ margin: '0 auto 16px', width: 52, height: 52, fontSize: 22 }}>
+          <i className="fa-solid fa-envelope-circle-check" />
+        </div>
+        <h1 style={{ marginBottom: 8 }}>Revisa tu correo</h1>
+        <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 4 }}>
           {email ? (
             <>
-              Enviamos un enlace de confirmacion a <strong>{email}</strong>. Ábrelo para activar tu cuenta.
+              Enviamos un enlace de confirmacion a <strong>{email}</strong>. Abrelo para activar tu cuenta.
             </>
           ) : (
-            'Enviamos un enlace de confirmacion a tu correo. Ábrelo para activar tu cuenta.'
+            'Enviamos un enlace de confirmacion a tu correo. Abrelo para activar tu cuenta.'
           )}
         </p>
-        <p className="muted-inline">El enlace vence en 24 horas.</p>
+        <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>El enlace vence en 24 horas.</p>
 
         {email && (
-          <button type="button" onClick={handleResend} disabled={sending || sent} style={{ marginTop: 12 }}>
+          <button type="button" className="auth-submit" onClick={handleResend} disabled={sending || sent} style={{ marginTop: 12 }}>
             {sent ? 'Correo reenviado' : sending ? 'Enviando...' : 'Reenviar correo'}
           </button>
         )}
 
-        <p style={{ marginTop: 16 }}>
+        <p className="auth-footer">
           <Link to="/login">Volver a inicio de sesion</Link>
         </p>
       </div>
-    </div>
+    </AuthLayout>
   )
 }

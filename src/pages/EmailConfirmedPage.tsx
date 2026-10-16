@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import { AuthLayout } from '../components/auth/AuthLayout'
+import { AuthField } from '../components/auth/AuthField'
 
 export function EmailConfirmedPage() {
   const [searchParams] = useSearchParams()
@@ -24,36 +26,46 @@ export function EmailConfirmedPage() {
 
   if (ok) {
     return (
-      <div className="auth-page">
-        <div className="card narrow" style={{ textAlign: 'center' }}>
-          <i className="fa-solid fa-circle-check" style={{ fontSize: 40, color: 'var(--success)' }} />
-          <h1>Cuenta confirmada</h1>
-          <p className="muted-inline">Ya podes iniciar sesion normalmente.</p>
-          <Link to="/login" className="button primary" style={{ marginTop: 12 }}>
+      <AuthLayout headlineTop="Cuenta" headlineAccent="confirmada." subtitle="Ya podes iniciar sesion y emitir tu primera factura electronica.">
+        <div className="auth-card" style={{ textAlign: 'center' }}>
+          <div className="auth-card-icon" style={{ margin: '0 auto 16px', width: 52, height: 52, fontSize: 22, background: 'var(--success-pastel-bg)', color: 'var(--success)' }}>
+            <i className="fa-solid fa-circle-check" />
+          </div>
+          <h1 style={{ marginBottom: 8 }}>Cuenta confirmada</h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 20 }}>Ya podes iniciar sesion normalmente.</p>
+          <Link to="/login" className="auth-submit" style={{ textDecoration: 'none' }}>
             Ir a iniciar sesion
+            <i className="fa-solid fa-arrow-right" />
           </Link>
         </div>
-      </div>
+      </AuthLayout>
     )
   }
 
   return (
-    <div className="auth-page">
-      <form className="card narrow" onSubmit={handleResend} style={{ textAlign: 'center' }}>
-        <i className="fa-solid fa-triangle-exclamation" style={{ fontSize: 40, color: 'var(--danger)' }} />
-        <h1>Enlace invalido o vencido</h1>
-        <p className="muted-inline">Pedi uno nuevo ingresando tu correo.</p>
-        <label style={{ textAlign: 'left' }}>
-          Email
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        </label>
-        <button type="submit" className="primary" disabled={sending || sent} style={{ marginTop: 8 }}>
-          {sent ? 'Correo reenviado' : sending ? 'Enviando...' : 'Reenviar correo'}
-        </button>
-        <p style={{ marginTop: 12 }}>
+    <AuthLayout headlineTop="Enlace" headlineAccent="vencido o invalido." subtitle="Pedi un enlace nuevo y segui con tu registro sin perder tiempo.">
+      <div className="auth-card">
+        <div className="auth-card-header">
+          <span className="auth-card-icon" style={{ background: 'var(--danger-pastel-bg)', color: 'var(--danger)' }}>
+            <i className="fa-solid fa-triangle-exclamation" />
+          </span>
+          <div>
+            <h1>Enlace invalido o vencido</h1>
+            <p>Pedi uno nuevo ingresando tu correo</p>
+          </div>
+        </div>
+
+        <form onSubmit={handleResend}>
+          <AuthField label="Correo electronico" icon="fa-envelope" type="email" value={email} onChange={setEmail} placeholder="nombre@empresa.com" required />
+          <button type="submit" className="auth-submit" disabled={sending || sent}>
+            {sent ? 'Correo reenviado' : sending ? 'Enviando...' : 'Reenviar correo'}
+          </button>
+        </form>
+
+        <p className="auth-footer">
           <Link to="/login">Volver a inicio de sesion</Link>
         </p>
-      </form>
-    </div>
+      </div>
+    </AuthLayout>
   )
 }

@@ -1,6 +1,8 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { acceptInvitation, getInvitation, type InvitationDetails } from '../api/invitations'
+import { AuthLayout } from '../components/auth/AuthLayout'
+import { AuthField } from '../components/auth/AuthField'
 
 const ROLE_LABELS: Record<string, string> = {
   owner: 'Propietario',
@@ -42,68 +44,84 @@ export function AcceptInvitationPage() {
     }
   }
 
+  const layoutProps = {
+    headlineTop: 'Sumate a',
+    headlineAccent: 'tu equipo.',
+    subtitle: 'Un espacio de trabajo listo para que factures y gestiones junto a tu empresa.',
+  }
+
   if (loading) {
     return (
-      <div className="auth-page">
-        <p>Cargando...</p>
-      </div>
+      <AuthLayout {...layoutProps}>
+        <div className="auth-card" style={{ textAlign: 'center' }}>
+          <p style={{ color: 'var(--text-muted)' }}>Cargando...</p>
+        </div>
+      </AuthLayout>
     )
   }
 
   if (invalid || !invitation) {
     return (
-      <div className="auth-page">
-        <div className="card narrow" style={{ textAlign: 'center' }}>
-          <i className="fa-solid fa-triangle-exclamation" style={{ fontSize: 40, color: 'var(--danger)' }} />
-          <h1>Invitacion invalida o vencida</h1>
-          <p className="muted-inline">Pide al administrador que te envie una nueva invitacion.</p>
-          <p style={{ marginTop: 16 }}>
+      <AuthLayout headlineTop="Invitacion" headlineAccent="no disponible." subtitle="Pedi al administrador que te envie una invitacion nueva.">
+        <div className="auth-card" style={{ textAlign: 'center' }}>
+          <div className="auth-card-icon" style={{ margin: '0 auto 16px', width: 52, height: 52, fontSize: 22, background: 'var(--danger-pastel-bg)', color: 'var(--danger)' }}>
+            <i className="fa-solid fa-triangle-exclamation" />
+          </div>
+          <h1 style={{ marginBottom: 8 }}>Invitacion invalida o vencida</h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Pide al administrador que te envie una nueva invitacion.</p>
+          <p className="auth-footer">
             <Link to="/login">Volver a inicio de sesion</Link>
           </p>
         </div>
-      </div>
+      </AuthLayout>
     )
   }
 
   return (
-    <div className="auth-page">
-      <form className="card narrow" onSubmit={handleSubmit}>
-        <h1>SICOFAC</h1>
-        <p className="muted-inline">
-          Te invitaron a unirte a <strong>{invitation.company_name}</strong> como{' '}
-          <strong>{ROLE_LABELS[invitation.role] ?? invitation.role}</strong>.
-        </p>
+    <AuthLayout {...layoutProps}>
+      <div className="auth-card">
+        <div className="auth-card-header">
+          <span className="auth-card-icon">
+            <i className="fa-solid fa-user-group" />
+          </span>
+          <div>
+            <h1>Aceptar invitacion</h1>
+            <p>
+              Te invitaron a <strong>{invitation.company_name}</strong> como {ROLE_LABELS[invitation.role] ?? invitation.role}
+            </p>
+          </div>
+        </div>
 
-        {invitation.requires_password ? (
-          <>
-            <label>
-              Nombre
-              <input value={name} onChange={(e) => setName(e.target.value)} required />
-            </label>
-            <label>
-              Contrasena
-              <input
+        <form onSubmit={handleSubmit}>
+          {invitation.requires_password ? (
+            <>
+              <AuthField label="Nombre" icon="fa-user" value={name} onChange={setName} placeholder="Nombre y apellido" required autoComplete="name" />
+              <AuthField
+                label="Contrasena"
+                icon="fa-lock"
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={setPassword}
+                placeholder="Minimo 8 caracteres"
                 minLength={8}
                 required
+                autoComplete="new-password"
               />
-            </label>
-          </>
-        ) : (
-          <p className="muted-inline">
-            Ya tenes una cuenta con <strong>{invitation.email}</strong>. Acepta para que tu cuenta tambien
-            tenga acceso a esta empresa.
-          </p>
-        )}
+            </>
+          ) : (
+            <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 16 }}>
+              Ya tenes una cuenta con <strong>{invitation.email}</strong>. Acepta para que tu cuenta tambien tenga acceso a esta empresa.
+            </p>
+          )}
 
-        {error && <p role="alert">{error}</p>}
+          {error && <p role="alert">{error}</p>}
 
-        <button type="submit" className="primary" disabled={submitting}>
-          {submitting ? 'Procesando...' : 'Aceptar invitacion'}
-        </button>
-      </form>
-    </div>
+          <button type="submit" className="auth-submit" disabled={submitting}>
+            {submitting ? 'Procesando...' : 'Aceptar invitacion'}
+            <i className="fa-solid fa-arrow-right" />
+          </button>
+        </form>
+      </div>
+    </AuthLayout>
   )
 }

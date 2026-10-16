@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { isAxiosError } from 'axios'
 import { useAuth } from '../auth/AuthContext'
 import { listPlans, type Plan } from '../api/plans'
+import { AuthLayout } from '../components/auth/AuthLayout'
+import { AuthField } from '../components/auth/AuthField'
 
 function formatPrice(priceCents: number): string {
   return `$${(priceCents / 100).toFixed(2)}/año`
@@ -26,6 +28,7 @@ export function RegisterPage() {
   const [plans, setPlans] = useState<Plan[]>([])
   const [planId, setPlanId] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     listPlans()
@@ -50,6 +53,7 @@ export function RegisterPage() {
       return
     }
 
+    setSubmitting(true)
     try {
       await register({
         name,
@@ -68,105 +72,131 @@ export function RegisterPage() {
         return
       }
       setError('No se pudo registrar. Intenta de nuevo.')
+    } finally {
+      setSubmitting(false)
     }
   }
 
   return (
-    <div className="auth-page">
-      <form className="card" style={{ width: '100%', maxWidth: 520 }} onSubmit={handleSubmit}>
-        <h1>Crear tu facturador</h1>
+    <AuthLayout
+      headlineTop="Empeza a"
+      headlineAccent="facturar hoy."
+      subtitle="Crea tu cuenta en minutos y emiti tu primera factura electronica sin instalar nada. Firma, SRI y POS incluidos desde el plan inicial."
+    >
+      <div className="auth-card" style={{ maxWidth: 460 }}>
+        <div className="auth-card-header">
+          <span className="auth-card-icon">
+            <i className="fa-solid fa-user-plus" />
+          </span>
+          <div>
+            <h1>Crear cuenta</h1>
+            <p>Completa tus datos para empezar</p>
+          </div>
+        </div>
 
-        <label>
-          Tu nombre
-          <input value={name} onChange={(e) => setName(e.target.value)} required />
-        </label>
-        <label>
-          Email
-          <input
+        <form onSubmit={handleSubmit}>
+          <AuthField label="Tu nombre" icon="fa-user" value={name} onChange={setName} placeholder="Nombre y apellido" required autoComplete="name" />
+          <AuthField
+            label="Correo electronico"
+            icon="fa-envelope"
             type="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={setEmail}
+            placeholder="nombre@empresa.com"
             required
+            autoComplete="email"
           />
-        </label>
-        <label>
-          Contraseña
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            minLength={8}
-            required
-          />
-        </label>
-        <label>
-          Confirmar contrasena
-          <input
-            type="password"
-            value={passwordConfirmation}
-            onChange={(e) => setPasswordConfirmation(e.target.value)}
-            minLength={8}
-            required
-          />
-        </label>
 
-        <hr />
+          <div className="auth-field-row">
+            <AuthField
+              label="Contrasena"
+              icon="fa-lock"
+              type="password"
+              value={password}
+              onChange={setPassword}
+              placeholder="Minimo 8 caracteres"
+              minLength={8}
+              required
+              autoComplete="new-password"
+            />
+            <AuthField
+              label="Confirmar"
+              icon="fa-lock"
+              type="password"
+              value={passwordConfirmation}
+              onChange={setPasswordConfirmation}
+              placeholder="Repeti la contrasena"
+              minLength={8}
+              required
+              autoComplete="new-password"
+            />
+          </div>
 
-        <label>
-          Nombre de tu empresa
-          <input value={companyName} onChange={(e) => setCompanyName(e.target.value)} required />
-        </label>
-        <label>
-          RUC (13 digitos)
-          <input
+          <div className="auth-divider" />
+
+          <AuthField label="Nombre de tu empresa" icon="fa-building" value={companyName} onChange={setCompanyName} placeholder="Razon social" required />
+          <AuthField
+            label="RUC (13 digitos)"
+            icon="fa-id-card"
             value={companyRuc}
-            onChange={(e) => setCompanyRuc(e.target.value)}
+            onChange={setCompanyRuc}
+            placeholder="0999999999001"
             maxLength={13}
             minLength={13}
             required
           />
-        </label>
-        <label>
-          Ambiente
-          <select
-            value={companyEnvironment}
-            onChange={(e) => setCompanyEnvironment(e.target.value as 'test' | 'production')}
-          >
-            <option value="test">Pruebas</option>
-            <option value="production">Produccion</option>
-          </select>
-        </label>
 
-        <hr />
-
-        <div className="plan-picker">
-          <span className="section-label">Elegi tu plan</span>
-          <div className="plan-picker-grid">
-            {plans.map((plan) => (
-              <button
-                key={plan.id}
-                type="button"
-                className={plan.id === planId ? 'plan-card selected' : 'plan-card'}
-                onClick={() => setPlanId(plan.id)}
+          <label className="auth-field">
+            <span className="auth-field-top">
+              <span className="auth-field-label">Ambiente</span>
+            </span>
+            <span className="auth-field-input">
+              <i className="fa-solid fa-flask" />
+              <select
+                value={companyEnvironment}
+                onChange={(e) => setCompanyEnvironment(e.target.value as 'test' | 'production')}
+                style={{ paddingLeft: 36, width: '100%' }}
               >
-                <strong>{plan.name}</strong>
-                <span className="plan-price">{formatPrice(plan.price_cents)}</span>
-                <span className="plan-limit">{formatCount(plan.monthly_document_limit, 'documento/mes', 'documentos/mes')}</span>
-                <span className="plan-limit">{formatCount(plan.max_establishments, 'establecimiento', 'establecimientos')}</span>
-                <span className="plan-limit">{formatCount(plan.max_users, 'usuario', 'usuarios')}</span>
-              </button>
-            ))}
-          </div>
-        </div>
+                <option value="test">Pruebas</option>
+                <option value="production">Produccion</option>
+              </select>
+            </span>
+          </label>
 
-        {error && <p role="alert">{error}</p>}
-        <button type="submit" className="primary">
-          Registrarme
-        </button>
-        <p>
+          <div className="auth-divider" />
+
+          <div className="plan-picker">
+            <span className="auth-field-label">Elegi tu plan</span>
+            <div className="plan-picker-grid">
+              {plans.map((plan) => (
+                <button
+                  key={plan.id}
+                  type="button"
+                  className={plan.id === planId ? 'plan-card selected' : 'plan-card'}
+                  onClick={() => setPlanId(plan.id)}
+                >
+                  <strong>{plan.name}</strong>
+                  <span className="plan-price">{formatPrice(plan.price_cents)}</span>
+                  <span className="plan-limit">{formatCount(plan.monthly_document_limit, 'documento/mes', 'documentos/mes')}</span>
+                  <span className="plan-limit">{formatCount(plan.max_establishments, 'establecimiento', 'establecimientos')}</span>
+                  <span className="plan-limit">{formatCount(plan.max_users, 'usuario', 'usuarios')}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {error && <p role="alert">{error}</p>}
+
+          <button type="submit" className="auth-submit" disabled={submitting}>
+            {submitting ? 'Creando cuenta...' : 'Crear cuenta'}
+            <i className="fa-solid fa-arrow-right" />
+          </button>
+        </form>
+
+        <p className="auth-footer">
           Ya tenes cuenta? <Link to="/login">Ingresa aqui</Link>
         </p>
-      </form>
-    </div>
+      </div>
+    </AuthLayout>
   )
 }

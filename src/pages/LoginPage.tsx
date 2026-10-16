@@ -2,6 +2,8 @@ import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { isAxiosError } from 'axios'
 import { useAuth } from '../auth/AuthContext'
+import { AuthLayout } from '../components/auth/AuthLayout'
+import { AuthField } from '../components/auth/AuthField'
 
 export function LoginPage() {
   const { login, resendVerification } = useAuth()
@@ -9,6 +11,7 @@ export function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
   const [needsVerification, setNeedsVerification] = useState(false)
   const [resending, setResending] = useState(false)
   const [resent, setResent] = useState(false)
@@ -18,6 +21,7 @@ export function LoginPage() {
     setError(null)
     setNeedsVerification(false)
     setResent(false)
+    setSubmitting(true)
     try {
       await login(email, password)
       navigate('/')
@@ -28,6 +32,8 @@ export function LoginPage() {
         return
       }
       setError('Credenciales invalidas.')
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -42,40 +48,61 @@ export function LoginPage() {
   }
 
   return (
-    <div className="auth-page">
-      <form className="card narrow" onSubmit={handleSubmit}>
-        <h1>SICOFAC</h1>
-        <label>
-          Email
-          <input
+    <AuthLayout
+      headlineTop="Factura con"
+      headlineAccent="confianza total."
+      subtitle="Firma electronica, SRI y punto de venta en un solo lugar para tu negocio. Sin instalar nada."
+    >
+      <div className="auth-card">
+        <div className="auth-card-header">
+          <span className="auth-card-icon">
+            <i className="fa-solid fa-shield-halved" />
+          </span>
+          <div>
+            <h1>Bienvenido de nuevo</h1>
+            <p>Ingresa tus credenciales para continuar</p>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          <AuthField
+            label="Correo electronico"
+            icon="fa-envelope"
             type="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={setEmail}
+            placeholder="nombre@empresa.com"
             required
+            autoComplete="email"
           />
-        </label>
-        <label>
-          Contrasena
-          <input
+          <AuthField
+            label="Contrasena"
+            icon="fa-lock"
             type="password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={setPassword}
+            placeholder="Tu contrasena"
             required
+            autoComplete="current-password"
           />
-        </label>
-        {error && <p role="alert">{error}</p>}
-        {needsVerification && (
-          <button type="button" onClick={handleResend} disabled={resending || resent}>
-            {resent ? 'Correo reenviado' : resending ? 'Enviando...' : 'Reenviar correo de confirmacion'}
+
+          {error && <p role="alert">{error}</p>}
+          {needsVerification && (
+            <button type="button" className="linklike" onClick={handleResend} disabled={resending || resent} style={{ marginBottom: 16 }}>
+              {resent ? 'Correo reenviado' : resending ? 'Enviando...' : 'Reenviar correo de confirmacion'}
+            </button>
+          )}
+
+          <button type="submit" className="auth-submit" disabled={submitting}>
+            {submitting ? 'Ingresando...' : 'Iniciar sesion'}
+            <i className="fa-solid fa-arrow-right" />
           </button>
-        )}
-        <button type="submit" className="primary">
-          Ingresar
-        </button>
-        <p>
-          No tenes cuenta? <Link to="/register">Registrate</Link>
+        </form>
+
+        <p className="auth-footer">
+          No tenes cuenta? <Link to="/register">Registrate aqui</Link>
         </p>
-      </form>
-    </div>
+      </div>
+    </AuthLayout>
   )
 }

@@ -1,7 +1,17 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { isAxiosError } from 'axios'
 import { useAuth } from '../auth/AuthContext'
+import { listPlans, type Plan } from '../api/plans'
+
+function formatPrice(priceCents: number): string {
+  return `$${(priceCents / 100).toFixed(2)}/año`
+}
+
+function formatCount(value: number | null, singular: string, plural: string): string {
+  if (value === null) return `${plural} ilimitados`
+  return `${value} ${value === 1 ? singular : plural}`
+}
 
 export function RegisterPage() {
   const { register } = useAuth()
@@ -13,7 +23,18 @@ export function RegisterPage() {
   const [companyName, setCompanyName] = useState('')
   const [companyRuc, setCompanyRuc] = useState('')
   const [companyEnvironment, setCompanyEnvironment] = useState<'test' | 'production'>('test')
+  const [plans, setPlans] = useState<Plan[]>([])
+  const [planId, setPlanId] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    listPlans()
+      .then((result) => {
+        setPlans(result)
+        setPlanId((current) => current ?? result[0]?.id ?? null)
+      })
+      .catch(() => setError('No se pudieron cargar los planes.'))
+  }, [])
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
@@ -21,6 +42,11 @@ export function RegisterPage() {
 
     if (password !== passwordConfirmation) {
       setError('Las contrasenas no coinciden.')
+      return
+    }
+
+    if (!planId) {
+      setError('Elegi un plan.')
       return
     }
 
@@ -32,6 +58,7 @@ export function RegisterPage() {
         company_name: companyName,
         company_ruc: companyRuc,
         company_environment: companyEnvironment,
+        plan_id: planId,
       })
       navigate('/check-email', { state: { email } })
     } catch (err) {
@@ -46,7 +73,7 @@ export function RegisterPage() {
 
   return (
     <div className="auth-page">
-      <form className="card narrow" onSubmit={handleSubmit}>
+      <form className="card" style={{ width: '100%', maxWidth: 520 }} onSubmit={handleSubmit}>
         <h1>Crear tu facturador</h1>
 
         <label>
@@ -109,6 +136,28 @@ export function RegisterPage() {
             <option value="production">Produccion</option>
           </select>
         </label>
+
+        <hr />
+
+        <div className="plan-picker">
+          <span className="section-label">Elegi tu plan</span>
+          <div className="plan-picker-grid">
+            {plans.map((plan) => (
+              <button
+                key={plan.id}
+                type="button"
+                className={plan.id === planId ? 'plan-card selected' : 'plan-card'}
+                onClick={() => setPlanId(plan.id)}
+              >
+                <strong>{plan.name}</strong>
+                <span className="plan-price">{formatPrice(plan.price_cents)}</span>
+                <span className="plan-limit">{formatCount(plan.monthly_document_limit, 'documento/mes', 'documentos/mes')}</span>
+                <span className="plan-limit">{formatCount(plan.max_establishments, 'establecimiento', 'establecimientos')}</span>
+                <span className="plan-limit">{formatCount(plan.max_users, 'usuario', 'usuarios')}</span>
+              </button>
+            ))}
+          </div>
+        </div>
 
         {error && <p role="alert">{error}</p>}
         <button type="submit" className="primary">

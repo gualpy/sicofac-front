@@ -896,7 +896,7 @@ table.data-table {
   align-items: center;
 }
 
-.auth-field-input i:first-child {
+.auth-field-input > i:first-child {
   position: absolute;
   left: 13px;
   font-size: 13px;

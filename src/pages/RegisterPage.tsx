@@ -27,6 +27,7 @@ export function RegisterPage() {
   const [companyEnvironment, setCompanyEnvironment] = useState<'test' | 'production'>('test')
   const [plans, setPlans] = useState<Plan[]>([])
   const [planId, setPlanId] = useState<number | null>(null)
+  const [termsAccepted, setTermsAccepted] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
@@ -53,6 +54,11 @@ export function RegisterPage() {
       return
     }
 
+    if (!termsAccepted) {
+      setError('Tenes que aceptar los terminos y la politica de privacidad.')
+      return
+    }
+
     setSubmitting(true)
     try {
       await register({
@@ -63,6 +69,7 @@ export function RegisterPage() {
         company_ruc: companyRuc,
         company_environment: companyEnvironment,
         plan_id: planId,
+        terms_accepted: termsAccepted,
       })
       navigate('/check-email', { state: { email } })
     } catch (err) {
@@ -184,6 +191,26 @@ export function RegisterPage() {
               ))}
             </div>
           </div>
+
+          <label className="auth-checkbox-row">
+            <input
+              type="checkbox"
+              checked={termsAccepted}
+              onChange={(e) => setTermsAccepted(e.target.checked)}
+              required
+            />
+            <span>
+              Acepto los{' '}
+              <a href="/terminos" target="_blank" rel="noopener noreferrer">
+                Terminos de Servicio
+              </a>{' '}
+              y la{' '}
+              <a href="/privacidad" target="_blank" rel="noopener noreferrer">
+                Politica de Privacidad
+              </a>
+              .
+            </span>
+          </label>
 
           {error && <p role="alert">{error}</p>}
 

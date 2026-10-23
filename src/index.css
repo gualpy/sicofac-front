@@ -2092,3 +2092,84 @@ button.primary.pos-charge-button:hover,
     margin: 0;
   }
 }
+
+/* Legal pages: Terminos / Privacidad */
+.legal-page {
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+.legal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 32px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.legal-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.legal-content {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 40px 24px 80px;
+  line-height: 1.65;
+}
+
+.legal-content h1 {
+  margin-bottom: 4px;
+}
+
+.legal-updated {
+  color: var(--text-muted);
+  font-size: 13px;
+  margin-bottom: 28px;
+}
+
+.legal-content h2 {
+  margin-top: 32px;
+  margin-bottom: 8px;
+  font-size: 17px;
+}
+
+.legal-content p,
+.legal-content li {
+  color: var(--text);
+  font-size: 15px;
+}
+
+.legal-content ul {
+  padding-left: 20px;
+  margin: 8px 0;
+}
+
+.legal-content li {
+  margin-bottom: 6px;
+}
+
+/* Checkbox row (auth forms: aceptar terminos) */
+.auth-checkbox-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 12px 0 16px;
+  font-size: 13px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.auth-checkbox-row input[type='checkbox'] {
+  margin-top: 2px;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  accent-color: var(--accent);
+}

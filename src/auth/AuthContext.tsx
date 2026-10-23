@@ -16,6 +16,7 @@ export type RegisterPayload = {
   company_ruc: string
   company_environment: 'test' | 'production'
   plan_id: number
+  terms_accepted: boolean
 }
 
 type AuthContextValue = {

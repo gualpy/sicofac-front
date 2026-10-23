@@ -9,6 +9,8 @@ import { RegisterPage } from './pages/RegisterPage'
 import { CheckEmailPage } from './pages/CheckEmailPage'
 import { EmailConfirmedPage } from './pages/EmailConfirmedPage'
 import { AcceptInvitationPage } from './pages/AcceptInvitationPage'
+import { TermsPage } from './pages/TermsPage'
+import { PrivacyPage } from './pages/PrivacyPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { CompanyPage } from './pages/CompanyPage'
 import { CustomersPage } from './pages/CustomersPage'
@@ -31,6 +33,8 @@ function App() {
             <Route path="/check-email" element={<CheckEmailPage />} />
             <Route path="/email-confirmado" element={<EmailConfirmedPage />} />
             <Route path="/invitaciones/:token" element={<AcceptInvitationPage />} />
+            <Route path="/terminos" element={<TermsPage />} />
+            <Route path="/privacidad" element={<PrivacyPage />} />
             <Route element={<ProtectedRoute />}>
               <Route path="/pos" element={<PosPage />} />
               <Route path="/invoices/:id/ticket" element={<TicketPage />} />

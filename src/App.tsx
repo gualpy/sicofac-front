@@ -11,6 +11,8 @@ import { EmailConfirmedPage } from './pages/EmailConfirmedPage'
 import { AcceptInvitationPage } from './pages/AcceptInvitationPage'
 import { TermsPage } from './pages/TermsPage'
 import { PrivacyPage } from './pages/PrivacyPage'
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
+import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { CompanyPage } from './pages/CompanyPage'
 import { CustomersPage } from './pages/CustomersPage'
@@ -35,6 +37,8 @@ function App() {
             <Route path="/invitaciones/:token" element={<AcceptInvitationPage />} />
             <Route path="/terminos" element={<TermsPage />} />
             <Route path="/privacidad" element={<PrivacyPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route element={<ProtectedRoute />}>
               <Route path="/pos" element={<PosPage />} />
               <Route path="/invoices/:id/ticket" element={<TicketPage />} />

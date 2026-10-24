@@ -85,6 +85,11 @@ export function LoginPage() {
             required
             autoComplete="current-password"
           />
+          <p style={{ textAlign: 'right', marginTop: -10, marginBottom: 16 }}>
+            <Link to="/forgot-password" style={{ fontSize: 13 }}>
+              Olvidaste tu contrasena?
+            </Link>
+          </p>
 
           {error && <p role="alert">{error}</p>}
           {needsVerification && (

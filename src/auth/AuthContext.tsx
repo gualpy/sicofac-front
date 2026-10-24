@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { apiClient } from '../api/client'
 import type { Company } from '../api/companies'
 
@@ -6,6 +6,7 @@ type User = {
   id: number
   name: string
   email: string
+  is_super_admin: boolean
 }
 
 export type RegisterPayload = {
@@ -22,7 +23,9 @@ export type RegisterPayload = {
 type AuthContextValue = {
   user: User | null
   token: string | null
-  login: (email: string, password: string) => Promise<void>
+  authLoading: boolean
+  login: (email: string, password: string) => Promise<User>
+  loginWithToken: (token: string) => void
   register: (payload: RegisterPayload) => Promise<Company>
   resendVerification: (email: string) => Promise<void>
   forgotPassword: (email: string) => Promise<void>
@@ -42,12 +45,47 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('token'))
   const [user, setUser] = useState<User | null>(null)
+  const [authLoading, setAuthLoading] = useState(true)
 
-  async function login(email: string, password: string) {
+  // Runs on mount (persisted token from a previous session) and whenever
+  // token changes (login, loginWithToken, logout) -- the only place `user`
+  // gets (re)populated, since login() below also sets it directly.
+  useEffect(() => {
+    let cancelled = false
+    if (!token) {
+      setAuthLoading(false)
+      return
+    }
+    apiClient
+      .get('/auth/me')
+      .then(({ data }) => {
+        if (!cancelled) setUser(data)
+      })
+      .catch(() => {
+        if (!cancelled) {
+          localStorage.removeItem('token')
+          setToken(null)
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setAuthLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [token])
+
+  async function login(email: string, password: string): Promise<User> {
     const { data } = await apiClient.post('/auth/login', { email, password })
     localStorage.setItem('token', data.token)
     setToken(data.token)
     setUser(data.user)
+    return data.user as User
+  }
+
+  function loginWithToken(newToken: string): void {
+    localStorage.setItem('token', newToken)
+    setToken(newToken)
   }
 
   async function register(payload: RegisterPayload): Promise<Company> {
@@ -82,7 +120,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, token, login, register, resendVerification, forgotPassword, resetPassword, logout }}
+      value={{
+        user,
+        token,
+        authLoading,
+        login,
+        loginWithToken,
+        register,
+        resendVerification,
+        forgotPassword,
+        resetPassword,
+        logout,
+      }}
     >
       {children}
     </AuthContext.Provider>

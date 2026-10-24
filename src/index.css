@@ -603,6 +603,25 @@ table.data-table {
   background: var(--warning-pastel-bg);
 }
 
+.plan-edit-form {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  max-width: 640px;
+}
+
+.badge-success {
+  color: var(--success);
+  background: var(--success-pastel-bg);
+}
+
+.badge-danger {
+  color: var(--danger);
+  background: var(--danger-pastel-bg);
+}
+
 .badge.pos-badge {
   color: var(--accent-strong);
   background: var(--accent-pastel-bg);
@@ -2342,10 +2361,14 @@ button.primary.pos-charge-button:hover,
   margin-bottom: 36px;
 }
 
+/* Horizontal scroller, not a grid: an arbitrary number of plans (more than
+   fit on screen) slide sideways instead of squeezing or wrapping. */
 .landing-pricing-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  display: flex;
   gap: 20px;
+  overflow-x: auto;
+  padding: 4px 4px 12px;
+  scroll-snap-type: x proximity;
 }
 
 .landing-plan-card {
@@ -2353,6 +2376,8 @@ button.primary.pos-charge-button:hover,
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 24px;
+  flex: 0 0 240px;
+  scroll-snap-align: start;
   display: flex;
   flex-direction: column;
   align-items: center;

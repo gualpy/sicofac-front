@@ -23,8 +23,8 @@ export function LoginPage() {
     setResent(false)
     setSubmitting(true)
     try {
-      await login(email, password)
-      navigate('/')
+      const loggedInUser = await login(email, password)
+      navigate(loggedInUser.is_super_admin ? '/admin' : '/')
     } catch (err) {
       if (isAxiosError(err) && err.response?.status === 403 && err.response.data?.code === 'EMAIL_NOT_VERIFIED') {
         setNeedsVerification(true)

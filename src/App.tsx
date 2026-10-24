@@ -3,6 +3,12 @@ import { Toaster } from 'react-hot-toast'
 import { AuthProvider } from './auth/AuthContext'
 import { CompanyProvider } from './company/CompanyContext'
 import { ProtectedRoute } from './routes/ProtectedRoute'
+import { AdminProtectedRoute } from './routes/AdminProtectedRoute'
+import { AdminShell } from './components/admin/AdminShell'
+import { AdminLoginPage } from './pages/admin/AdminLoginPage'
+import { AdminLoginCallbackPage } from './pages/admin/AdminLoginCallbackPage'
+import { AdminDashboardPage } from './pages/admin/AdminDashboardPage'
+import { AdminPlansPage } from './pages/admin/AdminPlansPage'
 import { AppShell } from './components/AppShell'
 import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
@@ -39,6 +45,14 @@ function App() {
             <Route path="/privacidad" element={<PrivacyPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/admin/login" element={<AdminLoginPage />} />
+            <Route path="/admin/login-callback" element={<AdminLoginCallbackPage />} />
+            <Route element={<AdminProtectedRoute />}>
+              <Route element={<AdminShell />}>
+                <Route path="/admin" element={<AdminDashboardPage />} />
+                <Route path="/admin/plans" element={<AdminPlansPage />} />
+              </Route>
+            </Route>
             <Route element={<ProtectedRoute />}>
               <Route path="/pos" element={<PosPage />} />
               <Route path="/invoices/:id/ticket" element={<TicketPage />} />

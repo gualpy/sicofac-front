@@ -5,15 +5,7 @@ import { useAuth } from '../auth/AuthContext'
 import { listPlans, type Plan } from '../api/plans'
 import { AuthLayout } from '../components/auth/AuthLayout'
 import { AuthField } from '../components/auth/AuthField'
-
-function formatPrice(priceCents: number): string {
-  return `$${(priceCents / 100).toFixed(2)}/año`
-}
-
-function formatCount(value: number | null, singular: string, plural: string): string {
-  if (value === null) return `${plural} ilimitados`
-  return `${value} ${value === 1 ? singular : plural}`
-}
+import { formatPlanPrice as formatPrice, formatPlanCount as formatCount } from '../utils/plan'
 
 export function RegisterPage() {
   const { register } = useAuth()

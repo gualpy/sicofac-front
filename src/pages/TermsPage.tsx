@@ -11,6 +11,15 @@ export function TermsPage() {
         <a href="/privacidad">Politica de Privacidad</a>.
       </p>
 
+      <div className="legal-callout">
+        <strong>Aviso de version beta:</strong> el modulo de firma y envio de comprobantes al SRI esta en
+        fase beta. Aun no fue validado de punta a punta contra el ambiente de pruebas real del SRI, solo
+        contra entornos de prueba internos. Mientras dure esta fase, no garantizamos que un comprobante
+        emitido desde SICOFAC sea aceptado por el SRI, y te recomendamos verificar manualmente cada
+        documento hasta que te avisemos que esta validacion quedo completa. Esta limitacion se retirara en
+        una proxima version de estos Terminos una vez confirmada la integracion real.
+      </div>
+
       <h2>1. El servicio</h2>
       <p>
         SICOFAC permite a una empresa ("la Empresa", "tu empresa") generar, firmar electronicamente

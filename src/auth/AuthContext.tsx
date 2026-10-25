@@ -15,7 +15,6 @@ export type RegisterPayload = {
   password: string
   company_name: string
   company_ruc: string
-  company_environment: 'test' | 'production'
   plan_id: number
   terms_accepted: boolean
 }

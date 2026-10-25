@@ -16,7 +16,6 @@ export function RegisterPage() {
   const [passwordConfirmation, setPasswordConfirmation] = useState('')
   const [companyName, setCompanyName] = useState('')
   const [companyRuc, setCompanyRuc] = useState('')
-  const [companyEnvironment, setCompanyEnvironment] = useState<'test' | 'production'>('test')
   const [plans, setPlans] = useState<Plan[]>([])
   const [planId, setPlanId] = useState<number | null>(null)
   const [termsAccepted, setTermsAccepted] = useState(false)
@@ -59,7 +58,6 @@ export function RegisterPage() {
         password,
         company_name: companyName,
         company_ruc: companyRuc,
-        company_environment: companyEnvironment,
         plan_id: planId,
         terms_accepted: termsAccepted,
       })
@@ -144,23 +142,6 @@ export function RegisterPage() {
             minLength={13}
             required
           />
-
-          <label className="auth-field">
-            <span className="auth-field-top">
-              <span className="auth-field-label">Ambiente</span>
-            </span>
-            <span className="auth-field-input">
-              <i className="fa-solid fa-flask" />
-              <select
-                value={companyEnvironment}
-                onChange={(e) => setCompanyEnvironment(e.target.value as 'test' | 'production')}
-                style={{ paddingLeft: 36, width: '100%' }}
-              >
-                <option value="test">Pruebas</option>
-                <option value="production">Produccion</option>
-              </select>
-            </span>
-          </label>
 
           <div className="auth-divider" />
 
